@@ -1,8 +1,12 @@
 import requests
 import json
 from io import BytesIO
-from typing import BinaryIO, Optional
-from typing import Union
+from typing import BinaryIO, Optional, TypedDict, Union
+
+class MIItem(TypedDict):
+    filename: str
+    status: str
+    url: Optional[str]
 
 class MI:
     def __init__(self, id_token: str, url: str, apiKey: str):
@@ -19,7 +23,7 @@ class MI:
         return requests.delete(self.url + '/archive', headers=self.headers, json={'key': filename})
 
     def generate_upload_link(self, file_or_filename: Union[str, BytesIO, BinaryIO]) -> requests.Response:
-        url = self.__get_url_generate_upload_link()
+        url = self.__get_url(requests.get(self.url + '/archive', headers=self.headers))
         if isinstance(file_or_filename, str):
             file = open(file_or_filename, 'rb')
         else:
@@ -40,28 +44,29 @@ class MI:
             body = {'filetype': filetype}
         else:
             body = {'filename': filename, 'filetype': filetype}
-        url = self.__get_url_submit_MI(headers, body)
+        url = self.__get_url(requests.post(self.url + '/mi', headers=headers, json=body)).get('url')
         return requests.put(url, headers={'Content-Type' : 'application/pdf'}, files={'file': file})
        
     def delete_MI(self, jobid: str) -> requests.Response:
         body = {'jobid': jobid}
         return requests.delete(self.url + '/mi', headers=self.headers, json=body)
 
-# TODO: CONTINUE WITH THIS: API yet not ready
-    # def get_MI(self, jobid: str) -> requests.Response:
-    #     request = requests.get(self.url + '/mi/' + jobid, headers=self.headers)
-    #     return request
-
-    def __get_url_generate_upload_link(self) -> str:
-        request = requests.get(self.url + '/archive', headers=self.headers)
-        if request.status_code == 401:
-            raise Exception('The current token has expired. Update it.')
+    def get_MI(self, jobid: str) -> MIItem:
+        response = requests.get(self.url + '/mi/', headers=self.headers, params={'jobid' : jobid})
+        if response.status_code == 404 or response.status_code == 500: # TODO: UPDATE, CURRENTLY IT'S 500 FOR THIS CASE BUT IT SHOULD BE 404
+            raise Exception('The jobid {} does not exist'.format(jobid))
         else:
-            return json.loads(request.content)
-
-    def __get_url_submit_MI(self, headers, body) -> str:
-        request = requests.post(self.url + '/mi', headers=headers, json=body)
-        if request.status_code == 401:
-            raise Exception('The current token has expired. Update it.')
+            body = self.__get_url(response)
+        if body.get('status') == 'SUCCESS':
+            mi = MIItem(filename=body.get('filename'), status=body.get('status'), url=body.get('url'))
         else:
-            return json.loads(request.content).get('url')
+            mi = MIItem(filename=body.get('filename'), status=body.get('status'))
+        return mi
+
+    def __get_url(self, response: requests.Response) -> str:
+        if response.status_code == 401:
+            raise Exception('The current token has expired. Update it.')
+        elif response.status_code == 200:
+            return json.loads(response.content)
+        else:
+            raise Exception('An error ocurred, try again later.')
