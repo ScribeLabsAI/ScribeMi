@@ -13,6 +13,10 @@ class Archive(TypedDict):
     url: str
     last_modified: str
 
+class JobCreated(TypedDict):
+    jobid: str
+    url: str
+
 class MI:
     def __init__(self, url: str, api_key: str):
         self.url = url
@@ -45,9 +49,9 @@ class MI:
             file = file_or_filename
         response = requests.put(url, headers={'Content-Type' : 'application/zip'}, files={'file': file})
         self.__validate_response(response)
-        return True
+        return self.__clean_url(url)
 
-    def create_job(self, file_or_filename: Union[str, BytesIO, BinaryIO], filetype, filename: Optional[str] = None) -> True:
+    def create_job(self, file_or_filename: Union[str, BytesIO, BinaryIO], filetype, filename: Optional[str] = None) -> JobCreated:
         filetype_list = ['pdf', 'xlsx', 'xls', 'xlsm', 'doc', 'docx', 'ppt', 'pptx']
         if filetype not in filetype_list:
             raise Exception("Invalid filetype. Accepted values: 'pdf', 'xlsx', 'xls', 'xlsm', 'doc', 'docx', 'ppt', 'pptx'.")
@@ -62,10 +66,11 @@ class MI:
             body.update({'filename': filename})
         response_get_link = requests.post(self.url + '/mi', headers=headers, json=body)
         self.__validate_response(response_get_link)
-        url = json.loads(response_get_link.content).get('url')
+        body = json.loads(response_get_link.content) 
+        url = body.get('url')
         response = requests.put(url, headers={'Content-Type' : 'application/pdf'}, files={'file': file})
         self.__validate_response(response)
-        return True
+        return JobCreated(jobid=body.get('jobid'), url=url)
        
     def delete_job(self, jobid: str) -> True:
         body = {'jobid': jobid}
@@ -90,3 +95,6 @@ class MI:
                 raise Exception('Bad request.')
             else:
                 raise Exception('An error ocurred, try again later.')
+
+    def __clean_url(self, url: str) -> str:
+        return url.split('?')[0].split('/')[-1].replace('%3A', ':')        
