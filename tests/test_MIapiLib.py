@@ -29,10 +29,9 @@ class TestMIapiLibArchives(unittest.TestCase):
 
     def test_upload_archive_filename_2(self):
         clear_archives(mi)
-        filenames = []
-        filenames.append(mi.upload_archive(archive_path))
+        mi.upload_archive(archive_path)
         time.sleep(1)
-        filenames.append(mi.upload_archive(archive_path))
+        mi.upload_archive(archive_path)
         time.sleep(1)
         assert_file_amount_uploaded(self, mi, 2)
         clear_archives(mi)
@@ -45,10 +44,9 @@ class TestMIapiLibArchives(unittest.TestCase):
 
     def test_upload_archive_file_content_2(self):
         clear_archives(mi)
-        filenames = []
-        filenames.append(mi.upload_archive(open(archive_path, 'rb')))
+        mi.upload_archive(open(archive_path, 'rb'))
         time.sleep(1)
-        filenames.append(mi.upload_archive(open(archive_path, 'rb')))
+        mi.upload_archive(open(archive_path, 'rb'))
         time.sleep(1)
         assert_file_amount_uploaded(self, mi, 2)
         clear_archives(mi)
