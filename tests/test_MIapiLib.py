@@ -1,4 +1,3 @@
-from fileinput import filename
 from MIapiLib import MI
 import unittest
 import os
