@@ -39,7 +39,6 @@ class MI:
         response_get_link = requests.get(self.url + '/archive', headers=self.headers)
         self.__validate_response(response_get_link)
         url = json.loads(response_get_link.content)
-        print('URL: {}'.format(url))
         if isinstance(file_or_filename, str):
             file = open(file_or_filename, 'rb')
         else:
