@@ -14,7 +14,7 @@ access = ScribeAuth(client_id)
 id_token: str = access.get_tokens(username=os.environ.get("USER"), password=os.environ.get("PASSWORD")).get('idToken') # TODO: id_token, but it needs to be fixed in the other library first
 url: str = os.environ.get("URL")
 api_key: str = os.environ.get("API_KEY")
-archive_path = 'tests\example.zip'
+archive_path = 'tests/example.zip'
 
 mi = MI(url, api_key)
 mi.update_id_token(id_token)
