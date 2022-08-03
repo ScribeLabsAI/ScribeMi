@@ -72,7 +72,7 @@ class MI:
         self.__validate_response(response)
         return True
 
-    def upload_archive(self, file_or_filename: Union[str, BytesIO, BinaryIO]) -> True:
+    def upload_archive(self, file_or_filename: Union[str, BytesIO, BinaryIO]) -> str:
         """
         Upload archive by filepath or file loaded in memory.
                                
@@ -82,7 +82,7 @@ class MI:
 
         Returns
         ----
-        bool
+        str -- The name of the uploaded file
         """
         response_get_link = requests.get(self.url + '/archive', headers=self.headers)
         self.__validate_response(response_get_link)
