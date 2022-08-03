@@ -27,63 +27,71 @@ pip install ScribeMi
 ```python
 from ScribeMi import MI
 mi = MI('url', 'api_key')
-update_id_token('idtoken')
+mi.update_id_token('idtoken')
 ```
 
 ### 2. List uploaded archives
 
 ```python
 from ScribeMi import MI
-archives = list_archives()
+mi = MI('url', 'api_key')
+archives = mi.list_archives()
 ```
 
 ### 3. Upload archive with file path
 
 ```python
 from ScribeMi import MI
-archive_name = upload_archive('filename')
+mi = MI('url', 'api_key')
+archive_name = mi.upload_archive('filename')
 ```
 
 ### 4. Upload archive with file in memory
 
 ```python
 from ScribeMi import MI
-archive_name = upload_archive(open('file', 'rb'))
+mi = MI('url', 'api_key')
+archive_name = mi.upload_archive(open('file', 'rb'))
 ```
 
 ### 5. Delete archive by filename
 
 ```python
 from ScribeMi import MI
-deleted = delete_archive('filename')
+mi = MI('url', 'api_key')
+deleted = mi.delete_archive('filename')
 ```
 
 ### 6. Get job by jobid
 
 ```python
 from ScribeMi import MI
-job = get_job('jobid')
+mi = MI('url', 'api_key')
+job = mi.get_job('jobid')
 ```
 
 ### 7. Upload job with file path
 
 ```python
 from ScribeMi import MI
-job_created = create_job('jobid')
+mi = MI('url', 'api_key')
+job_created = mi.create_job('jobid')
 ```
 
 ### 8. Upload job with file in memory
 
 ```python
 from ScribeMi import MI
-job_created = create_job(open('file', 'rb'))
+mi = MI('url', 'api_key')
+job_created = mi.create_job(open('file', 'rb'))
 ```
 
 ### 9. Delete job by jobid
 
 ```python
 from ScribeMi import MI
-deleted = delete_job('jobid')
+mi = MI('url', 'api_key')
+deleted = mi.delete_job('jobid')
 ```
 
 ---
