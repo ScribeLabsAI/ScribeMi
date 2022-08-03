@@ -1,14 +1,14 @@
 from setuptools import setup
 
 setup(
-    name='MIapiLib',
+    name='ScribeMi',
     python_requires='>=3.10.0',
     version='1.0.0',
     description="Library to manage MI files in Scribe's platform",
-    url='https://github.com/ScribeLabsAI/MIapiLib',
+    url='https://github.com/ScribeLabsAI/ScribeMi',
     author='Ailin Venerus',
     author_email='ailin@scribelabs.ai',
-    packages=['MIapiLib'],
+    packages=['ScribeMi'],
     install_requires=['requests','dotenv'],
     classifiers=[
         'Development Status :: 4 - Beta',

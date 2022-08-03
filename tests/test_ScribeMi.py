@@ -1,4 +1,4 @@
-from MIapiLib import MI
+from ScribeMi import MI
 import unittest
 import os
 from dotenv import load_dotenv
@@ -21,7 +21,7 @@ mi = MI(url, api_key)
 mi.update_id_token(id_token)
 jobid_list = []
 
-class TestMIapiLibArchives(unittest.TestCase):
+class TestScribeMiArchives(unittest.TestCase):
 
     def setUp(self) -> None:
         super().setUp()
@@ -54,7 +54,7 @@ class TestMIapiLibArchives(unittest.TestCase):
         clear_archives(mi)
 
 
-class TestMIapiLibJob(unittest.TestCase):
+class TestScribeMiJob(unittest.TestCase):
 
     def setUp(self) -> None:
         super().setUp()
