@@ -19,13 +19,35 @@ class JobCreated(TypedDict):
 
 class MI:
     def __init__(self, url: str, api_key: str):
+        """
+        Construct an MI client.
+
+        Args
+        ----
+        url -- For the application to use
+        api_key -- The api key for the application.
+        """
         self.url = url
         self.headers = {'x-api-key' : api_key}
 
     def update_id_token(self, id_token: str) -> None:
+        """
+        Updates id token to be able to use the service.
+
+        Args
+        ----
+        id_token -- Id token to access archives and jobs.
+        """
         self.headers.update({'Authorization' : id_token})
 
     def list_archives(self) -> list[Archive]:
+        """
+        List all the archives uploaded.
+                
+        Returns
+        ----
+        list[Archive] -- List of Dictionary {"name": "str", "url": "str", "last_modified": "str"}
+        """
         response = requests.get(self.url + '/archives', headers=self.headers)
         self.__validate_response(response)
         body = json.loads(response.text).get('archives')
@@ -35,11 +57,33 @@ class MI:
         return archives
 
     def delete_archive(self, filename: str) -> True:
+        """
+        Delete archive by name.
+                
+        Args
+        ----
+        filename -- Name of the archive to delete.
+
+        Returns
+        ----
+        bool
+        """
         response = requests.delete(self.url + '/archive', headers=self.headers, json={'key': filename})
         self.__validate_response(response)
         return True
 
     def upload_archive(self, file_or_filename: Union[str, BytesIO, BinaryIO]) -> True:
+        """
+        Upload archive by filepath or file loaded in memory.
+                               
+        Args
+        ----
+        file_or_filename -- Filepath of the file or file present in memory ready to be uploaded.
+
+        Returns
+        ----
+        bool
+        """
         response_get_link = requests.get(self.url + '/archive', headers=self.headers)
         self.__validate_response(response_get_link)
         url = json.loads(response_get_link.content)
@@ -52,6 +96,17 @@ class MI:
         return url.split('?')[0].split('/')[-1].replace('%3A', ':')
 
     def create_job(self, file_or_filename: Union[str, BytesIO, BinaryIO], filetype, filename: Optional[str] = None) -> JobCreated:
+        """
+        Create and upload job.
+                               
+        Args
+        ----
+        file_or_filename -- Filepath of the file or file present in a var in memory ready to be uploaded.
+
+        Returns
+        ----
+        JobCreated -- Dictionary {"jobid": "str", "url": "str"}
+        """
         filetype_list = ['pdf', 'xlsx', 'xls', 'xlsm', 'doc', 'docx', 'ppt', 'pptx']
         if filetype not in filetype_list:
             raise Exception("Invalid filetype. Accepted values: 'pdf', 'xlsx', 'xls', 'xlsm', 'doc', 'docx', 'ppt', 'pptx'.")
@@ -73,12 +128,34 @@ class MI:
         return JobCreated(jobid=body.get('jobid'), url=url)
        
     def delete_job(self, jobid: str) -> True:
+        """
+        Delete job by jobid.
+                               
+        Args
+        ----
+        jobid -- Job id of the job to be deleted.
+
+        Returns
+        ----
+        bool
+        """
         body = {'jobid': jobid}
         response = requests.delete(self.url + '/mi', headers=self.headers, json=body)
         self.__validate_response(response)
         return True
 
     def get_job(self, jobid: str) -> Job:
+        """
+        Get job by job id.
+                               
+        Args
+        ----
+        jobid -- Job id of the job to get.
+
+        Returns
+        ----
+        Job -- Dictionary {"filename": "str", "status: "str", "url": "str"}
+        """
         response = requests.get(self.url + '/mi/', headers=self.headers, params={'jobid' : jobid})
         self.__validate_response(response)
         body = json.loads(response.content)
