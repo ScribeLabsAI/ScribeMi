@@ -83,15 +83,15 @@ class MI:
         self.__validate_response(response)
         body = json.loads(response.content)
         job = Job(filename=body.get('filename'), status=body.get('status'))
-        if body.get('status') == 'SUCCESS':
-            job.update({'url' : body.get('url')})
+        if body.get('status') == 'SUCCESS': # TODO: add test to check data when changing status is available
+            job.update({'url' : body.get('url')}) # pragma: no cover
         return job
 
     def __validate_response(self, response: requests.Response):
         match response.status_code:
             case 401:
-                raise Exception('The current token has expired. Update it.')
+                raise Exception('The current token has expired. Update it.') # pragma: no cover
             case 404:
                 raise Exception('Bad request.')
             case 500:
-                raise Exception('An error ocurred, try again later.')
+                raise Exception('An error ocurred, try again later.') # pragma: no cover
