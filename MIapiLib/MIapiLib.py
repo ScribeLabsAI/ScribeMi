@@ -49,7 +49,7 @@ class MI:
             file = file_or_filename
         response = requests.put(url, headers={'Content-Type' : 'application/zip'}, files={'file': file})
         self.__validate_response(response)
-        return self.__clean_url(url)
+        return url.split('?')[0].split('/')[-1].replace('%3A', ':')
 
     def create_job(self, file_or_filename: Union[str, BytesIO, BinaryIO], filetype, filename: Optional[str] = None) -> JobCreated:
         filetype_list = ['pdf', 'xlsx', 'xls', 'xlsm', 'doc', 'docx', 'ppt', 'pptx']
@@ -88,13 +88,10 @@ class MI:
         return job
 
     def __validate_response(self, response: requests.Response):
-        if response.status_code != 200:
-            if response.status_code == 401:
+        match response.status_code:
+            case 401:
                 raise Exception('The current token has expired. Update it.')
-            if response.status_code == 404:
+            case 404:
                 raise Exception('Bad request.')
-            else:
+            case 500:
                 raise Exception('An error ocurred, try again later.')
-
-    def __clean_url(self, url: str) -> str:
-        return url.split('?')[0].split('/')[-1].replace('%3A', ':')        

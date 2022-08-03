@@ -22,34 +22,34 @@ mi.update_id_token(id_token)
 
 class TestMIapiLibArchives(unittest.TestCase):
 
-    def test_upload_archive_filename_1(self):
+    def setUp(self) -> None:
+        super().setUp()
         clear_archives(mi)
+
+    def test_upload_archive_filename_1(self):
         mi.upload_archive(archive_path)
         self.assertEquals(1, len(mi.list_archives()))
-        clear_archives(mi)
 
     def test_upload_archive_filename_2(self):
-        clear_archives(mi)
         mi.upload_archive(archive_path)
         time.sleep(1)
         mi.upload_archive(archive_path)
         time.sleep(1)
         self.assertEquals(2, len(mi.list_archives()))
-        clear_archives(mi)
 
     def test_upload_archive_filecontent_1(self):
-        clear_archives(mi)
         mi.upload_archive(open(archive_path, 'rb'))
         self.assertEquals(1, len(mi.list_archives()))
-        clear_archives(mi)
 
     def test_upload_archive_filecontent_2(self):
-        clear_archives(mi)
         mi.upload_archive(open(archive_path, 'rb'))
         time.sleep(1)
         mi.upload_archive(open(archive_path, 'rb'))
         time.sleep(1)
         self.assertEquals(2, len(mi.list_archives()))
+
+    def tearDown(self) -> None:
+        super().tearDown()
         clear_archives(mi)
 
 
@@ -86,7 +86,7 @@ class TestMIapiLibJob(unittest.TestCase):
         with self.assertRaises(Exception):
             self.assertRaises(mi.create_job(open(file_path, 'rb'), 'pdff'))
         
-        
+
 def clear_archives(mi):
     archives = mi.list_archives()
     for a in archives:
