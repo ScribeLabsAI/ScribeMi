@@ -19,6 +19,7 @@ file_path = 'tests/' + file_name
 
 mi = MI(url, api_key)
 mi.update_id_token(id_token)
+jobid_list = []
 
 class TestMIapiLibArchives(unittest.TestCase):
 
@@ -54,8 +55,14 @@ class TestMIapiLibArchives(unittest.TestCase):
 
 
 class TestMIapiLibJob(unittest.TestCase):
+
+    def setUp(self) -> None:
+        super().setUp()
+        clear_jobs(mi)
+
     def test_create_job_filepath_format_and_name(self):
         job_created = mi.create_job(file_path, 'pdf', file_name)
+        jobid_list.append(job_created.get('jobid'))
         time.sleep(1)
         job = mi.get_job(job_created.get('jobid'))
         self.assertEquals(file_name, job.get('filename'))
@@ -63,6 +70,7 @@ class TestMIapiLibJob(unittest.TestCase):
 
     def test_create_job_filepath_format_and_no_name(self):
         job_created = mi.create_job(file_path, 'pdf')
+        jobid_list.append(job_created.get('jobid'))
         time.sleep(1)
         job = mi.get_job(job_created.get('jobid'))
         self.assertEquals('', job.get('filename'))
@@ -70,6 +78,7 @@ class TestMIapiLibJob(unittest.TestCase):
 
     def test_create_job_filecontent_format_and_name(self):
         job_created = mi.create_job(open(file_path, 'rb'), 'pdf', file_name)
+        jobid_list.append(job_created.get('jobid'))
         time.sleep(1)
         job = mi.get_job(job_created.get('jobid'))
         self.assertEquals(file_name, job.get('filename'))
@@ -77,6 +86,7 @@ class TestMIapiLibJob(unittest.TestCase):
 
     def test_create_job_filecontent_format_and_no_name(self):
         job_created = mi.create_job(open(file_path, 'rb'), 'pdf')
+        jobid_list.append(job_created.get('jobid'))
         time.sleep(1)
         job = mi.get_job(job_created.get('jobid'))
         self.assertEquals('', job.get('filename'))
@@ -85,9 +95,21 @@ class TestMIapiLibJob(unittest.TestCase):
     def test_create_job_filecontent_wrong_format(self):
         with self.assertRaises(Exception):
             self.assertRaises(mi.create_job(open(file_path, 'rb'), 'pdff'))
+
+    def test_get_job_non_existent(self):
+        with self.assertRaises(Exception):
+            self.assertRaises(mi.get_job('jobid_test'))
         
+    def tearDown(self) -> None:
+        super().tearDown()
+        clear_jobs(mi)
+
 
 def clear_archives(mi):
     archives = mi.list_archives()
     for a in archives:
         mi.delete_archive(a.get('name'))
+
+def clear_jobs(mi):
+    for j in jobid_list:
+        mi.delete_job(j)
