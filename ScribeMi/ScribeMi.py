@@ -88,12 +88,10 @@ class MI:
         self.__validate_response(response_get_link)
         url = json.loads(response_get_link.content)
         if isinstance(file_or_filename, str):
-            file = open(file_or_filename, 'rb')
+            with open(file_or_filename, 'rb') as f:
+                return self.__send_archive(f, url)
         else:
-            file = file_or_filename
-        response = requests.put(url, headers={'Content-Type' : 'application/zip'}, files={'file': file})
-        self.__validate_response(response)
-        return url.split('?')[0].split('/')[-1].replace('%3A', ':')
+            return self.__send_archive(file_or_filename, url)
 
     def create_job(self, file_or_filename: Union[str, BytesIO, BinaryIO], filetype, filename: Optional[str] = None) -> JobCreated:
         """
@@ -111,21 +109,10 @@ class MI:
         if filetype not in filetype_list:
             raise Exception("Invalid filetype. Accepted values: 'pdf', 'xlsx', 'xls', 'xlsm', 'doc', 'docx', 'ppt', 'pptx'.")
         if isinstance(file_or_filename, str):
-            file = open(file_or_filename, 'rb')
+            with open(file_or_filename, 'rb') as f:
+                return self.__send_file(f, filename, filetype)
         else:
-            file = file_or_filename
-        headers = self.headers.copy()
-        headers.update({'Content-Type' : 'application/json'})
-        body = {'filetype': filetype}
-        if filename is not None:
-            body.update({'filename': filename})
-        response_get_link = requests.post(self.url + '/mi', headers=headers, json=body)
-        self.__validate_response(response_get_link)
-        body = json.loads(response_get_link.content) 
-        url = body.get('url')
-        response = requests.put(url, headers={'Content-Type' : 'application/pdf'}, files={'file': file})
-        self.__validate_response(response)
-        return JobCreated(jobid=body.get('jobid'), url=url)
+            return self.__send_file(file_or_filename, filename, filetype)
        
     def delete_job(self, jobid: str) -> True:
         """
@@ -172,3 +159,22 @@ class MI:
                 raise Exception('Bad request.')
             case 500:
                 raise Exception('An error ocurred, try again later.') # pragma: no cover
+
+    def __send_file(self, file, filename, filetype):
+        headers = self.headers.copy()
+        headers.update({'Content-Type' : 'application/json'})
+        body = {'filetype': filetype}
+        if filename is not None:
+            body.update({'filename': filename})
+        response_get_link = requests.post(self.url + '/mi', headers=headers, json=body)
+        self.__validate_response(response_get_link)
+        body = json.loads(response_get_link.content) 
+        url = body.get('url')
+        response = requests.put(url, headers={'Content-Type' : 'application/pdf'}, files={'file': file})
+        self.__validate_response(response)
+        return JobCreated(jobid=body.get('jobid'), url=url)
+
+    def __send_archive(self, file, url):
+        response = requests.put(url, headers={'Content-Type' : 'application/zip'}, files={'file': file})
+        self.__validate_response(response)
+        return url.split('?')[0].split('/')[-1].replace('%3A', ':')

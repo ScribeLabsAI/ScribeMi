@@ -1,1 +1,0 @@
-from scribeauth import ScribeAuth
