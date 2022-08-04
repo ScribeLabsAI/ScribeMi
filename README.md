@@ -12,6 +12,7 @@ One way to generate the _id_token_ is through [ScribeAuth](https://github.com/Sc
 
 It is important to use the function _update_id_token_ before calling any other method of this library to avoid exceptions. If the _id_token_ has expired, it will be necessary to update it again.
 
+
 ---
 
 This library requires a version of Python 3 that supports typings.
