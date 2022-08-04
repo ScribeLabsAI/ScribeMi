@@ -6,3 +6,4 @@ __pycache__
 ScribeMi/.env
 env/
 tests/.env
+.vscode
