@@ -18,7 +18,7 @@ class JobCreated(TypedDict):
     url: str
 
 class MI:
-    def __init__(self, url: str, api_key: str):
+    def __init__(self, api_key: str, url: str = 'https://nizwzbutlf.execute-api.eu-west-2.amazonaws.com/prod/'):
         """
         Construct an MI client.
 
@@ -93,7 +93,7 @@ class MI:
         else:
             return self.__send_archive(file_or_filename, url)
 
-    def create_job(self, file_or_filename: Union[str, BytesIO, BinaryIO], filetype, filename: Optional[str] = None) -> JobCreated:
+    def create_job(self, company_name, file_or_filename: Union[str, BytesIO, BinaryIO], filetype, filename: Optional[str] = None) -> JobCreated:
         """
         Create and upload job.
                                
@@ -110,9 +110,9 @@ class MI:
             raise Exception("Invalid filetype. Accepted values: 'pdf', 'xlsx', 'xls', 'xlsm', 'doc', 'docx', 'ppt', 'pptx'.")
         if isinstance(file_or_filename, str):
             with open(file_or_filename, 'rb') as f:
-                return self.__send_file(f, filename, filetype)
+                return self.__send_file(company_name, f, filename, filetype)
         else:
-            return self.__send_file(file_or_filename, filename, filetype)
+            return self.__send_file(company_name, file_or_filename, filename, filetype)
        
     def delete_job(self, jobid: str) -> True:
         """
@@ -154,23 +154,23 @@ class MI:
     def __validate_response(self, response: requests.Response):
         match response.status_code:
             case 401:
-                raise Exception('The current token has expired. Update it.') # pragma: no cover
+                raise Exception('The current token is wrong or has expired. Update it.') # pragma: no cover
             case 404:
-                raise Exception('Bad request.')
+                raise Exception('Task Not Found.')
             case 500:
                 raise Exception('An error ocurred, try again later.') # pragma: no cover
 
-    def __send_file(self, file, filename, filetype):
+    def __send_file(self, company_name, file, filename, filetype):
         headers = self.headers.copy()
         headers.update({'Content-Type' : 'application/json'})
-        body = {'filetype': filetype}
+        body = {'filetype': filetype, 'companyname': company_name}
         if filename is not None:
             body.update({'filename': filename})
         response_get_link = requests.post(self.url + '/mi', headers=headers, json=body)
         self.__validate_response(response_get_link)
         body = json.loads(response_get_link.content) 
         url = body.get('url')
-        response = requests.put(url, headers={'Content-Type' : 'application/pdf'}, files={'file': file})
+        response = requests.put(url, headers={'Content-Type' : 'application/pdf'}, files={'file': file}, json={'companyname': company_name})
         self.__validate_response(response)
         return JobCreated(jobid=body.get('jobid'), url=url)
 

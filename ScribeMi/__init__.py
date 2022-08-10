@@ -1,1 +1,1 @@
-from .scribemi import MI
+from .ScribeMi import MI

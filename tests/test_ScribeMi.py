@@ -1,4 +1,4 @@
-from scribemi import MI
+from ScribeMi import MI
 import unittest
 import os
 from dotenv import load_dotenv
@@ -16,56 +16,63 @@ api_key: str = os.environ.get("API_KEY")
 archive_path = 'tests/example.zip'
 file_name = 'example.pdf'
 file_path = 'tests/' + file_name
+company_name='Company Name'
 
-mi = MI(url, api_key)
+mi = MI(api_key, url)
 mi.update_id_token(id_token)
 jobid_list = []
 
 class TestScribeMiArchives(unittest.TestCase):
 
-    def setUp(self) -> None:
-        super().setUp()
+    @classmethod
+    def setUpClass(self) -> None:
         clear_archives(mi)
 
     def test_upload_archive_filename_1(self):
-        mi.upload_archive(archive_path)
-        self.assertEqual(1, len(mi.list_archives()))
+        archive_name = mi.upload_archive(archive_path)
+        archives_list_names = [a.get('name') for a in mi.list_archives()]
+        self.assertTrue(archive_name in archives_list_names)
 
     def test_upload_archive_filename_2(self):
-        mi.upload_archive(archive_path)
+        archive_name = mi.upload_archive(archive_path)
         time.sleep(1)
         with open(archive_path, 'rb') as f:
-                mi.upload_archive(f)
+            archive_name2 = mi.upload_archive(f)
         time.sleep(1)
-        self.assertEqual(2, len(mi.list_archives()))
+        archives_list_names = [a.get('name') for a in mi.list_archives()]
+        self.assertTrue(archive_name in archives_list_names)
+        self.assertTrue(archive_name2 in archives_list_names)
 
     def test_upload_archive_filecontent_1(self):
         with open(archive_path, 'rb') as f:
-                mi.upload_archive(f)
-        self.assertEqual(1, len(mi.list_archives()))
+            archive_name = mi.upload_archive(f)
+        archives_list_names = [a.get('name') for a in mi.list_archives()]
+        self.assertTrue(archive_name in archives_list_names)
 
     def test_upload_archive_filecontent_2(self):
         with open(archive_path, 'rb') as f:
-                mi.upload_archive(f)
+                archive_name = mi.upload_archive(f)
         time.sleep(1)
         with open(archive_path, 'rb') as f:
-                mi.upload_archive(f)
+                archive_name2 = mi.upload_archive(f)
         time.sleep(1)
-        self.assertEqual(2, len(mi.list_archives()))
+        archives_list_names = [a.get('name') for a in mi.list_archives()]
+        self.assertTrue(archive_name in archives_list_names)
+        self.assertTrue(archive_name2 in archives_list_names)
 
-    def tearDown(self) -> None:
-        super().tearDown()
+    @classmethod
+    def tearDownClass(self) -> None:
         clear_archives(mi)
 
 
 class TestScribeMiJob(unittest.TestCase):
 
-    def setUp(self) -> None:
-        super().setUp()
+    @classmethod
+    def setUpClass(self) -> None:
         clear_jobs(mi)
 
     def test_create_job_filepath_format_and_name(self):
-        job_created = mi.create_job(file_path, 'pdf', file_name)
+        job_created = mi.create_job(company_name, file_path, 'pdf', file_name)
         jobid_list.append(job_created.get('jobid'))
         time.sleep(1)
         job = mi.get_job(job_created.get('jobid'))
@@ -73,7 +80,7 @@ class TestScribeMiJob(unittest.TestCase):
         self.assertEqual('PENDING', job.get('status'))
 
     def test_create_job_filepath_format_and_no_name(self):
-        job_created = mi.create_job(file_path, 'pdf')
+        job_created = mi.create_job(company_name, file_path, 'pdf')
         jobid_list.append(job_created.get('jobid'))
         time.sleep(1)
         job = mi.get_job(job_created.get('jobid'))
@@ -82,7 +89,7 @@ class TestScribeMiJob(unittest.TestCase):
 
     def test_create_job_filecontent_format_and_name(self):
         with open(file_path, 'rb') as f:
-            job_created = mi.create_job(f, 'pdf', file_name)
+            job_created = mi.create_job(company_name, f, 'pdf', file_name)
         jobid_list.append(job_created.get('jobid'))
         time.sleep(1)
         job = mi.get_job(job_created.get('jobid'))
@@ -91,7 +98,7 @@ class TestScribeMiJob(unittest.TestCase):
 
     def test_create_job_filecontent_format_and_no_name(self):
         with open(file_path, 'rb') as f:
-            job_created = mi.create_job(f, 'pdf')
+            job_created = mi.create_job(company_name, f, 'pdf')
         jobid_list.append(job_created.get('jobid'))
         time.sleep(1)
         job = mi.get_job(job_created.get('jobid'))
@@ -101,22 +108,22 @@ class TestScribeMiJob(unittest.TestCase):
     def test_create_job_filecontent_wrong_format(self):
         with self.assertRaises(Exception):
             with open(file_path, 'rb') as f:
-                self.assertRaises(mi.create_job(f, 'pdff'))
+                self.assertRaises(mi.create_job(company_name, f, 'pdff'))
 
     def test_get_job_non_existent(self):
         with self.assertRaises(Exception):
             self.assertRaises(mi.get_job('jobid_test'))
-        
-    def tearDown(self) -> None:
-        super().tearDown()
+
+    @classmethod   
+    def tearDownClass(self) -> None:
         clear_jobs(mi)
 
 
-def clear_archives(mi):
+def clear_archives(mi: MI):
     archives = mi.list_archives()
     for a in archives:
         mi.delete_archive(a.get('name'))
 
-def clear_jobs(mi):
+def clear_jobs(mi: MI):
     for j in jobid_list:
         mi.delete_job(j)
