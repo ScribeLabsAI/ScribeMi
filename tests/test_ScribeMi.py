@@ -4,6 +4,8 @@ import os
 from dotenv import load_dotenv
 from scribeauth import ScribeAuth
 import time
+import boto3
+from jwt import JWT
 load_dotenv()
 
 client_id: str = os.environ.get("CLIENT_ID")
@@ -13,11 +15,10 @@ access = ScribeAuth(client_id)
 id_token: str = access.get_tokens(username=os.environ.get("USER"), password=os.environ.get("PASSWORD")).get('id_token')
 url: str = os.environ.get("URL")
 api_key: str = os.environ.get("API_KEY")
-archive_path = 'tests/example.zip'
-file_name = 'example.pdf'
+archive_path = 'tests/companies_house_document.zip'
+file_name = 'companies_house_document.pdf'
 file_path = 'tests/' + file_name
 company_name='Company Name'
-
 mi = MI(api_key, url)
 mi.update_id_token(id_token)
 jobid_list = []
@@ -78,6 +79,7 @@ class TestScribeMiJob(unittest.TestCase):
         job = mi.get_job(job_created.get('jobid'))
         self.assertEqual(file_name, job.get('filename'))
         self.assertEqual('PENDING', job.get('status'))
+        self.assertEqual(None, job.get('url'))
 
     def test_create_job_filepath_format_and_no_name(self):
         job_created = mi.create_job(company_name, file_path, 'pdf')
@@ -86,6 +88,7 @@ class TestScribeMiJob(unittest.TestCase):
         job = mi.get_job(job_created.get('jobid'))
         self.assertEqual('', job.get('filename'))
         self.assertEqual('PENDING', job.get('status'))
+        self.assertEqual(None, job.get('url'))
 
     def test_create_job_filecontent_format_and_name(self):
         with open(file_path, 'rb') as f:
@@ -95,6 +98,7 @@ class TestScribeMiJob(unittest.TestCase):
         job = mi.get_job(job_created.get('jobid'))
         self.assertEqual(file_name, job.get('filename'))
         self.assertEqual('PENDING', job.get('status'))
+        self.assertEqual(None, job.get('url'))
 
     def test_create_job_filecontent_format_and_no_name(self):
         with open(file_path, 'rb') as f:
@@ -104,6 +108,7 @@ class TestScribeMiJob(unittest.TestCase):
         job = mi.get_job(job_created.get('jobid'))
         self.assertEqual('', job.get('filename'))
         self.assertEqual('PENDING', job.get('status'))
+        self.assertEqual(None, job.get('url'))
 
     def test_create_job_filecontent_wrong_format(self):
         with self.assertRaises(Exception):
@@ -117,6 +122,7 @@ class TestScribeMiJob(unittest.TestCase):
     @classmethod   
     def tearDownClass(self) -> None:
         clear_jobs(mi)
+        clear_db_table()
 
 
 def clear_archives(mi: MI):
@@ -127,3 +133,19 @@ def clear_archives(mi: MI):
 def clear_jobs(mi: MI):
     for j in jobid_list:
         mi.delete_job(j)
+
+def clear_db_table():
+    jwt = JWT()
+    userid = jwt.decode(message=id_token, algorithms=['RS256'], do_verify=False).get('sub')
+    clientDynamoDB = boto3.client('dynamodb', region_name='eu-west-2')
+    all_jobid = clientDynamoDB.scan(TableName='tasks', ScanFilter={
+        'userid':{
+            'AttributeValueList':[{'S':str(userid)}],
+            'ComparisonOperator':'EQ'
+        }
+    }).get('Items')
+    for j in all_jobid:
+        clientDynamoDB.delete_item(
+            TableName='tasks',
+            Key={'jobid':{'S':str(j.get('jobid').get('S'))}}
+    )
