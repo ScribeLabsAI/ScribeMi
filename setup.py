@@ -7,7 +7,7 @@ def readme():
 setup(
     name='scribemi',
     python_requires='>=3.10.0',
-    version='1.0.0',
+    version='1.1.0',
     description="Library to manage MI files in Scribe's platform",
     long_description=readme(),
     url='https://github.com/ScribeLabsAI/ScribeMi',
