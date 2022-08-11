@@ -12,7 +12,6 @@ One way to generate the _id_token_ is through [ScribeAuth](https://github.com/Sc
 
 It is important to use the function _update_id_token_ before calling any other method of this library to avoid exceptions. If the _id_token_ has expired, it will be necessary to update it again.
 
-
 ---
 
 This library requires a version of Python 3 that supports typings.
@@ -27,7 +26,7 @@ pip install ScribeMi
 
 ```python
 from ScribeMi import MI
-mi = MI('url', 'api_key')
+mi = MI('api_key', 'url')
 mi.update_id_token('idtoken')
 ```
 
@@ -35,7 +34,7 @@ mi.update_id_token('idtoken')
 
 ```python
 from ScribeMi import MI
-mi = MI('url', 'api_key')
+mi = MI('api_key', 'url')
 archives = mi.list_archives()
 ```
 
@@ -43,55 +42,57 @@ archives = mi.list_archives()
 
 ```python
 from ScribeMi import MI
-mi = MI('url', 'api_key')
-archive_name = mi.upload_archive('filename')
+mi = MI('api_key', 'url')
+archive_name = mi.upload_archive('file_name')
 ```
 
 ### 4. Upload archive with file in memory
 
 ```python
 from ScribeMi import MI
-mi = MI('url', 'api_key')
-archive_name = mi.upload_archive(open('file', 'rb'))
+mi = MI('api_key', 'url')
+with open('file_name', 'rb') as f:
+	archive_name = mi.upload_archive(f)
 ```
 
-### 5. Delete archive by filename
+### 5. Delete archive by file_name
 
 ```python
 from ScribeMi import MI
-mi = MI('url', 'api_key')
-deleted = mi.delete_archive('filename')
+mi = MI('api_key', 'url')
+deleted = mi.delete_archive('file_name')
 ```
 
 ### 6. Get job by jobid
 
 ```python
 from ScribeMi import MI
-mi = MI('url', 'api_key')
+mi = MI('api_key', 'url')
 job = mi.get_job('jobid')
 ```
 
-### 7. Upload job with file path
+### 7. Upload job with file path (_file_name_ is optional)
 
 ```python
 from ScribeMi import MI
-mi = MI('url', 'api_key')
-job_created = mi.create_job('jobid')
+mi = MI('api_key', 'url')
+job_created = mi.create_job('company_name', 'file_path', 'filetype', 'file_name')
 ```
 
-### 8. Upload job with file in memory
+### 8. Upload job with file in memory (_file_name_ is optional)
 
 ```python
 from ScribeMi import MI
-mi = MI('url', 'api_key')
-job_created = mi.create_job(open('file', 'rb'))
+mi = MI('api_key', 'url')
+with open('file_path', 'rb') as f:
+	job_created = mi.create_job('company_name', f, 'filetype', 'file_name')
 ```
 
 ### 9. Delete job by jobid
 
 ```python
 from ScribeMi import MI
-mi = MI('url', 'api_key')
+mi = MI('api_key', 'url')
 deleted = mi.delete_job('jobid')
 ```
 
