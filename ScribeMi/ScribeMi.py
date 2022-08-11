@@ -17,6 +17,29 @@ class JobCreated(TypedDict):
     jobid: str
     url: str
 
+class UnauthenticatedException(Exception):
+    """
+    Exception raised when current token:
+    - Is wrong
+    - Has expired and needs to be updated
+    """
+    pass
+
+class TaskNotFoundException(Exception):
+    """
+    Exception raised when trying to access an unexistent task.
+    """
+    pass
+
+class InvalidFiletypeException(Exception):
+    """
+    Exception raised when trying to upload a file with a wrong filetype.
+    
+    Accepted values:
+    'pdf', 'xlsx', 'xls', 'xlsm', 'doc', 'docx', 'ppt', 'pptx'
+    """
+    pass
+
 class MI:
     def __init__(self, api_key: str, url: str = 'https://nizwzbutlf.execute-api.eu-west-2.amazonaws.com/prod/'):
         """
@@ -107,7 +130,7 @@ class MI:
         """
         filetype_list = ['pdf', 'xlsx', 'xls', 'xlsm', 'doc', 'docx', 'ppt', 'pptx']
         if filetype not in filetype_list:
-            raise Exception("Invalid filetype. Accepted values: 'pdf', 'xlsx', 'xls', 'xlsm', 'doc', 'docx', 'ppt', 'pptx'.")
+            raise InvalidFiletypeException("Invalid filetype. Accepted values: 'pdf', 'xlsx', 'xls', 'xlsm', 'doc', 'docx', 'ppt', 'pptx'.")
         if isinstance(file_or_filename, str):
             with open(file_or_filename, 'rb') as f:
                 return self.__send_file(company_name, f, filename, filetype)
@@ -153,11 +176,9 @@ class MI:
 
     def __validate_response(self, response: requests.Response):
         if response.status_code == 401:
-            raise Exception('The current token is wrong or has expired. Update it.')
-        elif response.status_code == 403:
-            raise Exception('No permissions to access task.') # pragma: no cover
+            raise UnauthenticatedException('The current token is wrong or has expired. Update it.')
         elif response.status_code == 404:
-            raise Exception('Task Not Found.')
+            raise TaskNotFoundException('Task Not Found.')
         elif response.status_code >= 500:
             raise Exception('An error ocurred, try again later.') # pragma: no cover
 

@@ -1,4 +1,5 @@
 from ScribeMi import MI
+from ScribeMi.ScribeMi import InvalidFiletypeException, TaskNotFoundException, UnauthenticatedException
 import unittest
 import os
 from dotenv import load_dotenv
@@ -67,12 +68,11 @@ class TestScribeMiArchives(unittest.TestCase):
         self.assertTrue(archive_name in archives_list_names)
         self.assertTrue(archive_name2 in archives_list_names)
 
-    def test_upload_archive_wrong_token(self):
+    def test_upload_archive_wrong_token_raise_exception(self):
         mi_wrong_token = MI(api_key, url)
         mi_wrong_token.update_id_token('wrong_id_token')
-        with self.assertRaises(Exception):
-            self.assertRaises(mi_wrong_token.upload_archive(archive_path))
-
+        self.assertRaises(UnauthenticatedException, mi_wrong_token.upload_archive, archive_path)
+            
     @classmethod
     def tearDownClass(self) -> None:
         clear_archives(mi)
@@ -122,14 +122,12 @@ class TestScribeMiJob(unittest.TestCase):
         self.assertEqual('PENDING', job.get('status'))
         self.assertEqual(None, job.get('url'))
 
-    def test_create_job_filecontent_wrong_format(self):
-        with self.assertRaises(Exception):
-            with open(file_path, 'rb') as f:
-                self.assertRaises(mi.create_job(company_name, f, 'pdff'))
+    def test_create_job_filecontent_wrong_format_raise_exception(self):
+        with open(file_path, 'rb') as f:
+            self.assertRaises(InvalidFiletypeException, mi.create_job, company_name, f, 'pdff')
 
-    def test_get_job_non_existent(self):
-        with self.assertRaises(Exception):
-            self.assertRaises(mi.get_job('jobid_test'))
+    def test_get_job_non_existent_raise_exception(self):
+        self.assertRaises(TaskNotFoundException, mi.get_job, 'jobid_test')
 
     @classmethod   
     def tearDownClass(self) -> None:
