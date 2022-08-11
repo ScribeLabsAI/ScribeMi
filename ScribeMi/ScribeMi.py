@@ -152,13 +152,14 @@ class MI:
         return job
 
     def __validate_response(self, response: requests.Response):
-        match response.status_code:
-            case 401:
-                raise Exception('The current token is wrong or has expired. Update it.') # pragma: no cover
-            case 404:
-                raise Exception('Task Not Found.')
-            case 500:
-                raise Exception('An error ocurred, try again later.') # pragma: no cover
+        if response.status_code == 401:
+            raise Exception('The current token is wrong or has expired. Update it.')
+        elif response.status_code == 403:
+            raise Exception('No permissions to access task.') # pragma: no cover
+        elif response.status_code == 404:
+            raise Exception('Task Not Found.')
+        elif response.status_code >= 500:
+            raise Exception('An error ocurred, try again later.') # pragma: no cover
 
     def __send_file(self, company_name, file, filename, filetype):
         headers = self.headers.copy()

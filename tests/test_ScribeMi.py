@@ -8,6 +8,12 @@ import boto3
 from jwt import JWT
 load_dotenv()
 
+"""
+Mandatory env vars to set:
+
+URL, API_KEY, CLIENT_ID, USER, PASSWORD, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, REGION_NAME
+"""
+
 client_id: str = os.environ.get("CLIENT_ID")
 username: str = os.environ.get("USER")
 password: str = os.environ.get("PASSWORD")
@@ -60,6 +66,12 @@ class TestScribeMiArchives(unittest.TestCase):
         archives_list_names = [a.get('name') for a in mi.list_archives()]
         self.assertTrue(archive_name in archives_list_names)
         self.assertTrue(archive_name2 in archives_list_names)
+
+    def test_upload_archive_wrong_token(self):
+        mi_wrong_token = MI(api_key, url)
+        mi_wrong_token.update_id_token('wrong_id_token')
+        with self.assertRaises(Exception):
+            self.assertRaises(mi_wrong_token.upload_archive(archive_path))
 
     @classmethod
     def tearDownClass(self) -> None:
