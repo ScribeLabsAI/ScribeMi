@@ -20,6 +20,7 @@ class JobCreated(TypedDict):
 class UnauthenticatedException(Exception):
     """
     Exception raised when current token:
+
     - Is wrong
     - Has expired and needs to be updated
     """
@@ -68,7 +69,7 @@ class MI:
         List all the archives uploaded.
                 
         Returns
-        ----
+        -------
         list[Archive] -- List of Dictionary {"name": "str", "url": "str", "last_modified": "str"}
         """
         response = requests.get(self.url + '/archives', headers=self.headers)
@@ -88,7 +89,7 @@ class MI:
         filename -- Name of the archive to delete.
 
         Returns
-        ----
+        -------
         bool
         """
         response = requests.delete(self.url + '/archive', headers=self.headers, json={'key': filename})
@@ -104,7 +105,7 @@ class MI:
         file_or_filename -- Filepath of the file or file present in memory ready to be uploaded.
 
         Returns
-        ----
+        -------
         str -- The name of the uploaded file
         """
         response_get_link = requests.get(self.url + '/archive', headers=self.headers)
@@ -125,7 +126,7 @@ class MI:
         file_or_filename -- Filepath of the file or file present in a var in memory ready to be uploaded.
 
         Returns
-        ----
+        -------
         JobCreated -- Dictionary {"jobid": "str", "url": "str"}
         """
         filetype_list = ['pdf', 'xlsx', 'xls', 'xlsm', 'doc', 'docx', 'ppt', 'pptx']
@@ -146,7 +147,7 @@ class MI:
         jobid -- Job id of the job to be deleted.
 
         Returns
-        ----
+        -------
         bool
         """
         body = {'jobid': jobid}
@@ -163,7 +164,7 @@ class MI:
         jobid -- Job id of the job to get.
 
         Returns
-        ----
+        -------
         Job -- Dictionary {"filename": "str", "status: "str", "url": "str"}
         """
         response = requests.get(self.url + '/mi/', headers=self.headers, params={'jobid' : jobid})
