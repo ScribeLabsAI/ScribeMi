@@ -11,7 +11,7 @@ import sys
 
 
 project = 'Scribe Mi'
-copyright = '2022, Ailin Venerus'
+copyright = '2022, Scribe Labs Limited'
 author = 'Ailin Venerus'
 release = '1.1.1'
 
