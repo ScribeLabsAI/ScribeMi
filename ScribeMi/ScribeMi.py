@@ -1,8 +1,7 @@
 import requests
 import json
 from io import BytesIO
-from typing import BinaryIO, List, Optional, TypedDict, Union
-from botocore.awsrequest import AWSRequest
+from typing import BinaryIO, Optional, TypedDict, Union
 from scribeauth import ScribeAuth
 from aws_requests_auth.aws_auth import AWSRequestsAuth
 from datetime import datetime
@@ -78,12 +77,12 @@ class MI:
         self.tokens = self.auth_client.get_tokens(**param)
         self.user_id = self.auth_client.get_federated_id(self.tokens['id_token'])
         self.credentials = self.auth_client.get_federated_credentials(self.user_id, self.tokens['id_token'])
+        host = self.env['API_URL'].split('/')[0]
         self.request_auth = AWSRequestsAuth(
             aws_access_key=self.credentials['AccessKeyId'],
             aws_secret_access_key=self.credentials['SecretKey'],
             aws_token=self.credentials['SessionToken'],
-            # TODO: host as parameter
-            aws_host='38r6qnuvsk.execute-api.eu-west-2.amazonaws.com',
+            aws_host=host,
             aws_region=self.env['REGION'],
             aws_service='execute-api'
         )
@@ -93,17 +92,17 @@ class MI:
             raise UnauthenticatedException('Must authenticate before reauthenticating')
         self.tokens = self.auth_client.get_tokens(refresh_token=self.tokens['refresh_token'])
         self.credentials = self.auth_client.get_federated_credentials(self.user_id, self.tokens['id_token'])
+        host = self.env['API_URL'].split('/')[0]
         self.request_auth = AWSRequestsAuth(
             aws_access_key=self.credentials['AccessKeyId'],
             aws_secret_access_key=self.credentials['SecretKey'],
             aws_token=self.credentials['SessionToken'],
-            # TODO: host as parameter
-            aws_host='38r6qnuvsk.execute-api.eu-west-2.amazonaws.com',
+            aws_host=host,
             aws_region=self.env['REGION'],
             aws_service='execute-api'
         )
 
-    def call_endpoint(self, method, path, data=None):
+    def call_endpoint(self, method, path, data=None, params=None):
         if self.request_auth == None:
             raise UnauthenticatedException('Not authenticated')
         if self.credentials['Expiration'] < datetime.now(self.credentials['Expiration'].tzinfo):
@@ -111,6 +110,7 @@ class MI:
         res = requests.request(
             method=method,
             url='https://{host}{path}'.format(host=self.env['API_URL'], path=path),
+            params=params,
             json=data,
             auth=self.request_auth,
         )
@@ -124,9 +124,12 @@ class MI:
             raise Exception('Unexpected error ({})'.format(res.status_code))
 
     def list_tasks(self, companyName=None) -> list[MITask]:
-        # TODO: assemble params includePresigned and company (if companyName specified)
-        # TODO: return (request /tasks?{params}).tasks
-        return self.call_endpoint('GET', '/tasks').get('tasks')
+        params = {
+            'includePresigned': True
+        }
+        if companyName != None:
+            params['company'] = companyName
+        return self.call_endpoint('GET', '/tasks', params=params).get('tasks')
 
     def get_task(self, jobid: str) -> MITask:
         return self.call_endpoint('GET', '/tasks/{}'.format(jobid))
@@ -161,13 +164,13 @@ class MI:
         if params.get('filetype') not in filetype_list:
             raise InvalidFiletypeException("Invalid filetype. Accepted values: 'pdf', 'xlsx', 'xls', 'xlsm', 'doc', 'docx', 'ppt', 'pptx'.")
 
+        if isinstance(file_or_filename, str) and params.get('filename') == None:
+            params['filename'] = file_or_filename
+
         post_res = self.call_endpoint('POST', '/tasks', params)
         put_url = post_res['url']
 
         if isinstance(file_or_filename, str):
-            if params.get('filename') == None:
-                # TODO: debug this
-                params['filename'] = file_or_filename
             with open(file_or_filename, 'rb') as file:
                 upload_file(file, put_url)
         else:
@@ -179,7 +182,6 @@ class MI:
         return self.call_endpoint('DELETE', '/tasks/{}'.format(task['jobid']))
 
 def upload_file(file, url):
-    # TODO: fix this
     res = requests.put(url, data=file)
     if res.status_code != 200:
         raise Exception('Error uploading file: {}'.format(res.status_code))

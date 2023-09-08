@@ -1,12 +1,9 @@
 from ScribeMi import MI
-from ScribeMi.ScribeMi import InvalidFiletypeException, TaskNotFoundException, UnauthenticatedException
+from ScribeMi.ScribeMi import UnauthenticatedException
 import unittest
 import os
 from dotenv import load_dotenv
-from scribeauth import ScribeAuth
-import time
-import boto3
-from jwt import JWT
+
 load_dotenv()
 
 """
@@ -27,7 +24,6 @@ username_and_password = {
     'username': os.environ['USERNAME'],
     'password': os.environ['PASSWORD'],
 }
-
 
 class TestScribeMiAuth(unittest.TestCase):
     def test_fetch_credentials_with_username_and_password(self):
@@ -84,7 +80,6 @@ class TestScribeMiEndpoints(unittest.TestCase):
             client.fetch_model(task)
             assert False
         except Exception:
-            # TODO: test error message
             # Error because task has not been processed
             assert True
 
