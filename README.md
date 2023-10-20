@@ -100,7 +100,7 @@ After documents have been processed by Scribe, the task status (which can be see
 task = client.get_task(jobid)
 
 # Use fetchModel
-model = fetchModel(task)
+model = client.fetch_model(task)
 
 # Alternatively, fetch the model directly from its URL
 return task.modelUrl
