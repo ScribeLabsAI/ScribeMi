@@ -1,21 +1,33 @@
 import requests
 import json
 from io import BytesIO
-from typing import BinaryIO, List, Optional, TypedDict, Union
+from typing import BinaryIO, Optional, TypedDict, Union
+from scribeauth import ScribeAuth
+from aws_requests_auth.aws_auth import AWSRequestsAuth
+from datetime import datetime
 
-class Job(TypedDict):
-    filename: str
-    status: str
-    url: Optional[str]
+class Env(TypedDict):
+    API_URL: str
+    IDENTITY_POOL_ID: str
+    USER_POOL_ID: str
+    CLIENT_ID: str
+    REGION: str
 
-class Archive(TypedDict):
-    name: str
-    url: str
-    last_modified: str
-
-class JobCreated(TypedDict):
+class MITask(TypedDict):
     jobid: str
-    url: str
+    client: str
+    companyName: Optional[str]
+    clientFilename: Optional[str]
+    originalFilename: Optional[str]
+    clientModelFilename: Optional[str]
+    status: str
+    submitted: int
+    modelUrl: Optional[str]
+
+class SubmitTaskParams(TypedDict):
+    filetype: str
+    filename: Optional[str]
+    companyname: Optional[str]
 
 class UnauthenticatedException(Exception):
     """
@@ -42,7 +54,7 @@ class InvalidFiletypeException(Exception):
     pass
 
 class MI:
-    def __init__(self, api_key: str, url: str = 'https://nizwzbutlf.execute-api.eu-west-2.amazonaws.com/prod/'):
+    def __init__(self, env):
         """
         Construct an MI client.
 
@@ -51,153 +63,125 @@ class MI:
         url -- For the application to use
         api_key -- The api key for the application.
         """
-        self.url = url
-        self.headers = {'x-api-key' : api_key}
+        self.env = env
+        self.auth_client = ScribeAuth({
+            'client_id': env['CLIENT_ID'],
+            'user_pool_id': env['USER_POOL_ID'],
+            'identity_pool_id': env['IDENTITY_POOL_ID']
+        })
+        self.tokens = None
+        self.user_id = None
+        self.request_auth = None
 
-    def update_id_token(self, id_token: str) -> None:
-        """
-        Updates id token to be able to use the service.
+    def authenticate(self, param):
+        self.tokens = self.auth_client.get_tokens(**param)
+        self.user_id = self.auth_client.get_federated_id(self.tokens['id_token'])
+        self.credentials = self.auth_client.get_federated_credentials(self.user_id, self.tokens['id_token'])
+        host = self.env['API_URL'].split('/')[0]
+        self.request_auth = AWSRequestsAuth(
+            aws_access_key=self.credentials['AccessKeyId'],
+            aws_secret_access_key=self.credentials['SecretKey'],
+            aws_token=self.credentials['SessionToken'],
+            aws_host=host,
+            aws_region=self.env['REGION'],
+            aws_service='execute-api'
+        )
 
-        Args
-        ----
-        id_token -- Id token to access archives and jobs.
-        """
-        self.headers.update({'Authorization' : id_token})
+    def reauthenticate(self):
+        if self.tokens == None or self.user_id == None:
+            raise UnauthenticatedException('Must authenticate before reauthenticating')
+        self.tokens = self.auth_client.get_tokens(refresh_token=self.tokens['refresh_token'])
+        self.credentials = self.auth_client.get_federated_credentials(self.user_id, self.tokens['id_token'])
+        host = self.env['API_URL'].split('/')[0]
+        self.request_auth = AWSRequestsAuth(
+            aws_access_key=self.credentials['AccessKeyId'],
+            aws_secret_access_key=self.credentials['SecretKey'],
+            aws_token=self.credentials['SessionToken'],
+            aws_host=host,
+            aws_region=self.env['REGION'],
+            aws_service='execute-api'
+        )
 
-    def list_archives(self) -> list[Archive]:
-        """
-        List all the archives uploaded.
-                
-        Returns
-        -------
-        list[Archive] -- List of Dictionary {"name": "str", "url": "str", "last_modified": "str"}
-        """
-        response = requests.get(self.url + '/archives', headers=self.headers)
-        self.__validate_response(response)
-        body = json.loads(response.text).get('archives')
-        archives: List = []
-        for a in body:
-            archives.append(Archive(name=a.get('key'), url=a.get('link'), last_modified=a.get('lastModified')))
-        return archives
-
-    def delete_archive(self, filename: str) -> True:
-        """
-        Delete archive by name.
-                
-        Args
-        ----
-        filename -- Name of the archive to delete.
-
-        Returns
-        -------
-        bool
-        """
-        response = requests.delete(self.url + '/archive', headers=self.headers, json={'key': filename})
-        self.__validate_response(response)
-        return True
-
-    def upload_archive(self, file_or_filename: Union[str, BytesIO, BinaryIO]) -> str:
-        """
-        Upload archive by filepath or file loaded in memory.
-                               
-        Args
-        ----
-        file_or_filename -- Filepath of the file or file present in memory ready to be uploaded.
-
-        Returns
-        -------
-        str -- The name of the uploaded file
-        """
-        response_get_link = requests.get(self.url + '/archive', headers=self.headers)
-        self.__validate_response(response_get_link)
-        url = json.loads(response_get_link.content)
-        if isinstance(file_or_filename, str):
-            with open(file_or_filename, 'rb') as f:
-                return self.__send_archive(f, url)
+    def call_endpoint(self, method, path, data=None, params=None):
+        if self.request_auth == None:
+            raise UnauthenticatedException('Not authenticated')
+        if self.credentials['Expiration'] < datetime.now(self.credentials['Expiration'].tzinfo):
+            self.reauthenticate()
+        res = requests.request(
+            method=method,
+            url='https://{host}{path}'.format(host=self.env['API_URL'], path=path),
+            params=params,
+            json=data,
+            auth=self.request_auth,
+        )
+        if res.status_code == 200:
+            return json.loads(res.text)
+        elif res.status_code == 401 or res.status_code == 403:
+            raise UnauthenticatedException('Authentication failed ({})'.format(res.status_code))
+        elif res.status_code == 404:
+            raise TaskNotFoundException('Not found')
         else:
-            return self.__send_archive(file_or_filename, url)
+            raise Exception('Unexpected error ({})'.format(res.status_code))
 
-    def create_job(self, company_name, file_or_filename: Union[str, BytesIO, BinaryIO], filetype, filename: Optional[str] = None) -> JobCreated:
-        """
-        Create and upload job.
-                               
-        Args
-        ----
-        file_or_filename -- Filepath of the file or file present in a var in memory ready to be uploaded.
+    def list_tasks(self, companyName=None) -> list[MITask]:
+        params = {
+            'includePresigned': True
+        }
+        if companyName != None:
+            params['company'] = companyName
+        return self.call_endpoint('GET', '/tasks', params=params).get('tasks')
 
-        Returns
-        -------
-        JobCreated -- Dictionary {"jobid": "str", "url": "str"}
-        """
+    def get_task(self, jobid: str) -> MITask:
+        return self.call_endpoint('GET', '/tasks/{}'.format(jobid))
+
+    def fetch_model(self, task: MITask):
+        if task.modelUrl == None:
+            raise Exception('Cannot load model for task {}: model is not ready for export'.format(task.jobid))
+        res = requests.get(task.modelUrl)
+        if res.status == 200:
+            return json.loads(res.text)
+        elif res.status_code == 401 or res.status_code == 403:
+            raise UnauthenticatedException(
+                '{} Authentication failed (possibly due to timeout: try calling get_task immediately before fetch_model)'
+                    .format(res.status_code)
+            )
+        else:
+            raise Exception('Unexpected error ({})'.format(res.status_code))
+
+    def consolidate_tasks(self, tasks: list[MITask]):
+        jobids = list(
+            map(
+                lambda task: task.jobid,
+                tasks
+            )
+        )
+        jobids_param = ';'.join(jobids)
+        res = self.call_endpoint('GET', '/fundportfolio?jobids={}'.format(jobids_param))
+        return res.model
+
+    def submit_task(self, file_or_filename: Union[str, BytesIO, BinaryIO], params: SubmitTaskParams):
         filetype_list = ['pdf', 'xlsx', 'xls', 'xlsm', 'doc', 'docx', 'ppt', 'pptx']
-        if filetype not in filetype_list:
+        if params.get('filetype') not in filetype_list:
             raise InvalidFiletypeException("Invalid filetype. Accepted values: 'pdf', 'xlsx', 'xls', 'xlsm', 'doc', 'docx', 'ppt', 'pptx'.")
+
+        if isinstance(file_or_filename, str) and params.get('filename') == None:
+            params['filename'] = file_or_filename
+
+        post_res = self.call_endpoint('POST', '/tasks', params)
+        put_url = post_res['url']
+
         if isinstance(file_or_filename, str):
-            with open(file_or_filename, 'rb') as f:
-                return self.__send_file(company_name, f, filename, filetype)
+            with open(file_or_filename, 'rb') as file:
+                upload_file(file, put_url)
         else:
-            return self.__send_file(company_name, file_or_filename, filename, filetype)
-       
-    def delete_job(self, jobid: str) -> True:
-        """
-        Delete job by jobid.
-                               
-        Args
-        ----
-        jobid -- Job id of the job to be deleted.
+            return upload_file(file_or_filename, put_url)
 
-        Returns
-        -------
-        bool
-        """
-        body = {'jobid': jobid}
-        response = requests.delete(self.url + '/mi', headers=self.headers, json=body)
-        self.__validate_response(response)
-        return True
+        return post_res['jobid']
 
-    def get_job(self, jobid: str) -> Job:
-        """
-        Get job by job id.
-                               
-        Args
-        ----
-        jobid -- Job id of the job to get.
+    def delete_task(self, task: MITask):
+        return self.call_endpoint('DELETE', '/tasks/{}'.format(task['jobid']))
 
-        Returns
-        -------
-        Job -- Dictionary {"filename": "str", "status: "str", "url": "str"}
-        """
-        response = requests.get(self.url + '/mi/', headers=self.headers, params={'jobid' : jobid})
-        self.__validate_response(response)
-        body = json.loads(response.content)
-        job = Job(filename=body.get('filename'), status=body.get('status'))
-        if body.get('status') == 'SUCCESS': # TODO: add test to check data when changing status is available
-            job.update({'url' : body.get('url')}) # pragma: no cover
-        return job
-
-    def __validate_response(self, response: requests.Response):
-        if response.status_code == 401:
-            raise UnauthenticatedException('The current token is wrong or has expired. Update it.')
-        elif response.status_code == 404:
-            raise TaskNotFoundException('Task Not Found.')
-        elif response.status_code >= 500:
-            raise Exception('An error ocurred, try again later.') # pragma: no cover
-
-    def __send_file(self, company_name, file, filename, filetype):
-        headers = self.headers.copy()
-        headers.update({'Content-Type' : 'application/json'})
-        body = {'filetype': filetype, 'companyname': company_name}
-        if filename is not None:
-            body.update({'filename': filename})
-        response_get_link = requests.post(self.url + '/mi', headers=headers, json=body)
-        self.__validate_response(response_get_link)
-        body = json.loads(response_get_link.content) 
-        url = body.get('url')
-        response = requests.put(url, headers={'Content-Type' : 'application/pdf'}, files={'file': file}, json={'companyname': company_name})
-        self.__validate_response(response)
-        return JobCreated(jobid=body.get('jobid'), url=url)
-
-    def __send_archive(self, file, url):
-        response = requests.put(url, headers={'Content-Type' : 'application/zip'}, files={'file': file})
-        self.__validate_response(response)
-        return url.split('?')[0].split('/')[-1].replace('%3A', ':')
+def upload_file(file, url):
+    res = requests.put(url, data=file)
+    if res.status_code != 200:
+        raise Exception('Error uploading file: {}'.format(res.status_code))
