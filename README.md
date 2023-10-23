@@ -1,6 +1,6 @@
-# Scribe Private Information (MI) SDK
+# Scribe Private Documents (MI) SDK
 
-A Python library designed to facilitate accessing Scribe's Private Information (MI) API.
+A Python library designed to facilitate accessing Scribe's Private Documents (MI) API.
 
 This library requires a version of Python 3 that supports typings.
 
