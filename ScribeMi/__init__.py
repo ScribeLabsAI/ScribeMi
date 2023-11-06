@@ -1,1 +1,1 @@
-from .ScribeMi import MI
+from .ScribeMi import MI, UnauthenticatedException
