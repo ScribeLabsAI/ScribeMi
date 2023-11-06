@@ -23,11 +23,13 @@ jobs:
       - name: Run tests
         run: python -m coverage run -m unittest
         env:
-          CLIENT_ID: ${{ secrets.CLIENT_ID }}
-          USER: ${{ secrets.USER }}
+          USERNAME: ${{ secrets.USERNAME }}
           PASSWORD: ${{ secrets.PASSWORD }}
+          API_URL: ${{ secrets.API_URL }}
+          IDENTITY_POOL_ID: ${{ secrets.IDENTITY_POOL_ID }}
           USER_POOL_ID: ${{ secrets.USER_POOL_ID }}
-          FEDERATED_POOL_ID: ${{ secrets.FEDERATED_POOL_ID }}
+          CLIENT_ID: ${{ secrets.CLIENT_ID }}
+          REGION: ${{ secrets.REGION }}
       - name: Publish code coverage
         uses: paambaati/codeclimate-action@v5.0.0
         env:
