@@ -7,3 +7,4 @@ ScribeMi/.env
 env/
 tests/.env
 .vscode
+venv
