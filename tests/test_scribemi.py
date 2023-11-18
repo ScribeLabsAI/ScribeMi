@@ -1,5 +1,5 @@
-from ScribeMi import MI
-from ScribeMi.ScribeMi import UnauthenticatedException
+from scribemi.ScribeMi import MI
+from scribemi.ScribeMi import UnauthenticatedException
 import unittest
 import os
 from dotenv import load_dotenv

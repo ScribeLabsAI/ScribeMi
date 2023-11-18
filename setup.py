@@ -15,7 +15,7 @@ setup(
     author='Ailin Venerus',
     author_email='ailin@scribelabs.ai',
     packages=['scribemi'],
-    install_requires=['requests'],
+    install_requires=['requests', 'scribeauth', 'aws_requests_auth'],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
