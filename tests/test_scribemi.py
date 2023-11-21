@@ -13,17 +13,18 @@ URL, API_KEY, CLIENT_ID, USER, PASSWORD, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KE
 """
 
 env = {
-    'API_URL': os.environ['API_URL'],
-    'IDENTITY_POOL_ID': os.environ['IDENTITY_POOL_ID'],
-    'USER_POOL_ID': os.environ['USER_POOL_ID'],
-    'CLIENT_ID': os.environ['CLIENT_ID'],
-    'REGION': os.environ['REGION'],
+    "API_URL": os.environ["API_URL"],
+    "IDENTITY_POOL_ID": os.environ["IDENTITY_POOL_ID"],
+    "USER_POOL_ID": os.environ["USER_POOL_ID"],
+    "CLIENT_ID": os.environ["CLIENT_ID"],
+    "REGION": os.environ["REGION"],
 }
 
 username_and_password = {
-    'username': os.environ['USERNAME'],
-    'password': os.environ['PASSWORD'],
+    "username": os.environ["USERNAME"],
+    "password": os.environ["PASSWORD"],
 }
+
 
 class TestScribeMiAuth(unittest.TestCase):
     def test_fetch_credentials_with_username_and_password(self):
@@ -33,7 +34,15 @@ class TestScribeMiAuth(unittest.TestCase):
     def test_fetch_credentials_with_refresh_token(self):
         client = MI(env)
         client.authenticate(username_and_password)
-        client.authenticate({ 'refresh_token': client.tokens['refresh_token'] })
+        tokens = client.tokens
+        if tokens != None:
+            refresh_token = tokens.get("refresh_token")
+            if refresh_token != None:
+                client.authenticate({"refresh_token": refresh_token})
+            else:
+                assert False
+        else:
+            assert False
 
     def test_reauthenticate(self):
         client = MI(env)
@@ -53,26 +62,32 @@ class TestScribeMiAuth(unittest.TestCase):
         except UnauthenticatedException:
             assert True
 
+
 class TestScribeMiErrorHandling(unittest.TestCase):
     def test_throws_on_error_response(self):
         client = MI(env)
         client.authenticate(username_and_password)
         try:
-            client.get_task('invalidJobid')
+            client.get_task("invalidJobid")
             assert False
         except:
             assert True
+
 
 class TestScribeMiEndpoints(unittest.TestCase):
     def test_endpoints(self):
         client = MI(env)
         client.authenticate(username_and_password)
 
-        jobid = client.submit_task('tests/companies_house_document.pdf', {
-            'filetype': 'pdf',
-        })
+        jobid = client.submit_task(
+            "tests/companies_house_document.pdf",
+            {"filetype": "pdf"},
+        )
 
         client.list_tasks()
+
+        if jobid == None:
+            assert False
 
         task = client.get_task(jobid)
 
