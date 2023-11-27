@@ -1,5 +1,5 @@
 aws-requests-auth==0.4.3
-boto3==1.29.3
+boto3==1.29.7
 botocore==1.32.3
 certifi==2023.11.17
 charset-normalizer==3.3.2
