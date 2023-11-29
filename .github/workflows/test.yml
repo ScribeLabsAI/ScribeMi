@@ -27,7 +27,6 @@ jobs:
           CLIENT_ID: ${{ secrets.CLIENT_ID }}
           USERNAME: ${{ secrets.USERNAME }}
           PASSWORD: ${{ secrets.PASSWORD }}
-          OTPCODE: ${{ secrets.OTPCODE }}
           USER_POOL_ID: ${{ secrets.USER_POOL_ID }}
           IDENTITY_POOL_ID: ${{ secrets.IDENTITY_POOL_ID }}
           API_URL: ${{ secrets.API_URL }}

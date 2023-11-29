@@ -36,6 +36,3 @@ jobs:
         if: ${{ steps.release.outputs.release_created }}
         with:
           password: ${{ secrets.PYPI_PASSWORD }}
-
-
-          
