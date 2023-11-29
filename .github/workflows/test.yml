@@ -24,12 +24,12 @@ jobs:
       - name: Run tests
         run: python -m coverage run -m pytest
         env:
+          CLIENT_ID: ${{ secrets.CLIENT_ID }}
           USERNAME: ${{ secrets.USERNAME }}
           PASSWORD: ${{ secrets.PASSWORD }}
-          API_URL: ${{ secrets.API_URL }}
-          IDENTITY_POOL_ID: ${{ secrets.IDENTITY_POOL_ID }}
           USER_POOL_ID: ${{ secrets.USER_POOL_ID }}
-          CLIENT_ID: ${{ secrets.CLIENT_ID }}
+          IDENTITY_POOL_ID: ${{ secrets.IDENTITY_POOL_ID }}
+          API_URL: ${{ secrets.API_URL }}
           REGION: ${{ secrets.REGION }}
       - name: Publish code coverage
         uses: paambaati/codeclimate-action@v5.0.0
