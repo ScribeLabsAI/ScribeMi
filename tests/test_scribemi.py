@@ -33,7 +33,15 @@ class TestScribeMiAuth(unittest.TestCase):
     def test_fetch_credentials_with_refresh_token(self):
         client = MI(env)
         client.authenticate(username_and_password)
-        client.authenticate({"refresh_token": client.tokens["refresh_token"]})
+        tokens = client.tokens
+        if tokens != None:
+            refresh_token = tokens.get("refresh_token")
+            if refresh_token != None:
+                client.authenticate({"refresh_token": refresh_token})
+            else:
+                assert False
+        else:
+            assert False
 
     def test_reauthenticate(self):
         client = MI(env)
@@ -72,12 +80,13 @@ class TestScribeMiEndpoints(unittest.TestCase):
 
         jobid = client.submit_task(
             "tests/companies_house_document.pdf",
-            {
-                "filetype": "pdf",
-            },
+            {"filetype": "pdf"},
         )
 
         client.list_tasks()
+
+        if jobid == None:
+            assert False
 
         task = client.get_task(jobid)
 
