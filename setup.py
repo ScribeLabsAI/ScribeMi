@@ -7,7 +7,7 @@ def readme():
 setup(
     name='scribemi',
     python_requires='>=3.10.0',
-    version='1.2.0',
+    version='1.3.0',
     description="Library to manage MI files in Scribe's platform",
     long_description=readme(),
     url='https://github.com/ScribeLabsAI/ScribeMi',
@@ -15,7 +15,7 @@ setup(
     author='Ailin Venerus',
     author_email='ailin@scribelabs.ai',
     packages=['scribemi'],
-    install_requires=['requests'],
+    install_requires=['requests', 'scribeauth', 'aws_requests_auth'],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',

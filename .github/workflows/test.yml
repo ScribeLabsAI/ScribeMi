@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - master
+    types: [opened, synchronize, reopened]
 
 jobs:
   test:
@@ -21,7 +22,7 @@ jobs:
       - name: Install deps
         run: pip install -r requirements.txt
       - name: Run tests
-        run: python -m coverage run -m unittest
+        run: python -m coverage run -m pytest
         env:
           USERNAME: ${{ secrets.USERNAME }}
           PASSWORD: ${{ secrets.PASSWORD }}
