@@ -40,6 +40,41 @@ class SubmitTaskParams(SubmitTaskParamsBase, total=False):
     companyname: Optional[str]
 
 
+class Value(TypedDict):
+    value: str | int | float
+    bbox: Optional[str]
+
+
+class ItemSchema(TypedDict):
+    tag: str
+    term: str
+    ogterm: str
+    values: list[Value]
+
+
+class Tables(TypedDict):
+    title: str
+    columnsOrder: list[str]
+    items: list[ItemSchema]
+
+
+class MICollatedModelFundPerformance(TypedDict):
+    date: Optional[str]
+    tables: list[Tables]
+
+
+class MIModelFundPerformanceSchema(TypedDict):
+    date: str
+    tables: list[Tables]
+
+
+class MIModelFinancialsSchema(TypedDict):
+    company: str
+    dateReporting: str
+    covering: str
+    items: list[ItemSchema]
+
+
 class UnauthenticatedException(Exception):
     """
     Exception raised when current token:
@@ -75,10 +110,8 @@ class MI:
         """
         Construct an MI client.
 
-        Args
-        ----
-        url -- For the application to use
-        api_key -- The api key for the application.
+        :param env: environment vars.
+        :type env: :typeddict:`~.Env`
         """
         self.env = env
         self.auth_client = ScribeAuth(
@@ -93,6 +126,21 @@ class MI:
         self.request_auth = None
 
     def authenticate(self, param):
+        """
+        To authenticate a user.
+
+        It is possible to pass a dictionary with a Username and Password or a Refresh Token:
+
+        :param username: usually an email address.
+        :type username: str
+        :param password: associated with this username.
+        :type password: str
+
+        Or
+
+        :param refresh_token: Refresh Token to use.
+        :type refresh_token: str
+        """
         self.tokens = self.auth_client.get_tokens(**param)
         id_token = self.tokens.get("id_token")
         if id_token != None:
@@ -113,6 +161,9 @@ class MI:
             raise UnauthenticatedException("Authentication failed")
 
     def reauthenticate(self):
+        """
+        To reauthenticate a user without sending parameters. Must be called after authenticate.
+        """
         if self.tokens == None or self.user_id == None:
             raise UnauthenticatedException("Must authenticate before reauthenticating")
         refresh_token = self.tokens.get("refresh_token")
@@ -138,6 +189,22 @@ class MI:
             raise UnauthenticatedException("Authentication failed")
 
     def call_endpoint(self, method, path, data=None, params=None):
+        """
+        To call an endpoint.
+
+        :meta private:
+        :param method: HTTP method to use: GET, POST or DELETE.
+        :type method: str
+        :param path: URL path to use, not including any prefix.
+        :type path: str
+        :param data: request body to send.
+        :type data: str
+        :param params: URL query params.
+        :type params: dict
+
+        :return: JSON response.
+        :rtype: str
+        """
         if self.request_auth == None:
             raise UnauthenticatedException("Not authenticated")
         if self.credentials["Expiration"] < datetime.now(
@@ -163,15 +230,42 @@ class MI:
             raise Exception("Unexpected error ({})".format(res.status_code))
 
     def list_tasks(self, companyName=None) -> list[MITask]:
+        """
+        To list the tasks.
+
+        :param companyName: list tasks for a specific company.
+        :type companyName: str
+
+        :return: list of tasks.
+        :rtype: list[MITask]
+        """
         params = {"includePresigned": True}
         if companyName != None:
             params["company"] = companyName
         return self.call_endpoint("GET", "/tasks", params=params).get("tasks")
 
     def get_task(self, jobid: str) -> MITask:
+        """
+        To get a task by jobid.
+
+        :param jobid: jobid of the task to get.
+        :type jobid: str
+
+        :return: a task.
+        :rtype: :typeddict:`~.MITask`
+        """
         return self.call_endpoint("GET", "/tasks/{}".format(jobid))
 
     def fetch_model(self, task: MITask):
+        """
+        Fetch the model for a task.
+
+        :param task: task to fetch the model for.
+        :type task: MITask
+
+        :return: model.
+        :rtype: Union[:typeddict:`~.MIModelFundPerformanceSchema`, :typeddict:`~.MIModelFinancialsSchema`]
+        """
         modelUrl = task.get("modelUrl")
         if modelUrl == None:
             raise Exception(
@@ -192,6 +286,15 @@ class MI:
             raise Exception("Unexpected error ({})".format(res.status_code))
 
     def consolidate_tasks(self, tasks: list[MITask]):
+        """
+        To consolidate tasks.
+
+        :param tasks: list of tasks to consolidate.
+        :type tasks: list[MITask]
+
+        :return: consolidated model.
+        :rtype: :typeddict:`~.MICollatedModelFundPerformance`
+        """
         jobids = list(map(lambda task: task.get("jobid"), tasks))
         jobids_param = ";".join(jobids)
         res = self.call_endpoint("GET", "/fundportfolio?jobids={}".format(jobids_param))
@@ -200,6 +303,15 @@ class MI:
     def submit_task(
         self, file_or_filename: Union[str, BytesIO, BinaryIO], params: SubmitTaskParams
     ):
+        """
+        To submit a task.
+
+        :param file_or_filename: file to upload -- Union[str, BytesIO, BinaryIO]
+        :param params: SubmitTaskParams -- Dictionary {filetype: “str”, filename: “Optional[str]”, companyname: “Optional[str]”}
+
+        :return: jobid of the task.
+        :rtype: str
+        """
         filetype_list = ["pdf", "xlsx", "xls", "xlsm", "doc", "docx", "ppt", "pptx"]
         if params.get("filetype") not in filetype_list:
             raise InvalidFiletypeException(
@@ -221,6 +333,15 @@ class MI:
         return post_res["jobid"]
 
     def delete_task(self, task: MITask):
+        """
+        To delete a task.
+
+        :param task: task to delete.
+        :type task: MITask
+
+        :return: JSON response.
+        :rtype: str
+        """
         return self.call_endpoint("DELETE", "/tasks/{}".format(task["jobid"]))
 
 
