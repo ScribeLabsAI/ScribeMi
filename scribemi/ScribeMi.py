@@ -5,30 +5,84 @@ from typing import BinaryIO, Union
 from scribeauth import ScribeAuth
 from aws_requests_auth.aws_auth import AWSRequestsAuth
 from datetime import datetime
-from typing_extensions import TypedDict, Optional
+from typing_extensions import TypedDict, Optional, List
 
 
 class Env(TypedDict):
+    """
+    Represents the environment configuration.
+    """
+
     API_URL: str
+    """
+    The URL of the API.
+    """
     IDENTITY_POOL_ID: str
+    """
+    The ID of the identity pool.
+    """
     USER_POOL_ID: str
+    """
+    The ID of the user pool.
+    """
     CLIENT_ID: str
+    """
+    The ID of the client.
+    """
     REGION: str
+    """
+    The region where the resources are located.
+    """
 
 
 class MITaskBase(TypedDict):
+    """
+    Represents a base MI task.
+    """
+
     jobid: str
+    """
+    The ID of the task.
+    """
     client: str
+    """
+    The client associated with the task.
+    """
     status: str
+    """
+    The status of the task.
+    """
     submitted: int
+    """
+    The timestamp when the task was submitted.
+    """
 
 
 class MITask(MITaskBase, total=False):
+    """
+    Represents a MI task.
+    """
+
     companyName: Optional[str]
+    """
+    The name of the company associated with the task.
+    """
     clientFilename: Optional[str]
+    """
+    The filename of the client's document.
+    """
     originalFilename: Optional[str]
+    """
+    The original filename of the document.
+    """
     clientModelFilename: Optional[str]
+    """
+    The filename of the client's model.
+    """
     modelUrl: Optional[str]
+    """
+    The URL of the model associated with the task.
+    """
 
 
 class SubmitTaskParamsBase(TypedDict):
@@ -49,30 +103,69 @@ class Item(TypedDict):
     tag: str
     term: str
     ogterm: str
-    values: list[Value]
+    values: List[Value]
 
 
 class Table(TypedDict):
     title: str
-    columnsOrder: list[str]
-    items: list[Item]
+    columnsOrder: List[str]
+    items: List[Item]
 
 
 class MICollatedModelFundPerformance(TypedDict):
+    """
+    Represents the MI collated model fund performance.
+    """
+
     date: Optional[str]
-    tables: list[Table]
+    """
+    The date of the performance.
+    """
+    tables: List[Table]
+    """
+    The list of tables containing fund performance data.
+    """
 
 
 class MIModelFundPerformance(TypedDict):
+    """
+    Represents the MI model of the fund performance.
+    """
+
     date: str
-    tables: list[Table]
+    """
+    The date of the fund performance data.
+    """
+    tables: List[Table]
+    """
+    A list of tables containing the fund performance details.
+    """
 
 
 class MIModelFinancials(TypedDict):
+    """
+    Represents the MI model for financials.
+    """
+
     company: str
+    """
+    The name of the company.
+    """
+
     dateReporting: str
+    """
+    The date of the financial reporting.
+    """
+
     covering: str
-    items: list[Item]
+    """
+    The period covered by the financial information.
+    """
+
+    items: List[Item]
+    """
+    The list of financial items.
+    """
 
 
 class UnauthenticatedException(Exception):
@@ -229,7 +322,7 @@ class MI:
         else:
             raise Exception("Unexpected error ({})".format(res.status_code))
 
-    def list_tasks(self, companyName=None) -> list[MITask]:
+    def list_tasks(self, companyName=None) -> List[MITask]:
         """
         To list the tasks.
 
@@ -237,7 +330,7 @@ class MI:
         :type companyName: str
 
         :return: list of tasks.
-        :rtype: list[MITask]
+        :rtype: List[:typeddict:`~.MITask`]
         """
         params = {"includePresigned": True}
         if companyName != None:
@@ -261,7 +354,7 @@ class MI:
         Fetch the model for a task.
 
         :param task: task to fetch the model for.
-        :type task: MITask
+        :type task: :typeddict:`~.MITask`
 
         :return: model.
         :rtype: Union[:typeddict:`~.MIModelFundPerformance`, :typeddict:`~.MIModelFinancials`]
@@ -285,12 +378,12 @@ class MI:
         else:
             raise Exception("Unexpected error ({})".format(res.status_code))
 
-    def consolidate_tasks(self, tasks: list[MITask]):
+    def consolidate_tasks(self, tasks: List[MITask]):
         """
         To consolidate tasks.
 
         :param tasks: list of tasks to consolidate.
-        :type tasks: list[:typeddict:`~.MITask`]
+        :type tasks: List[:typeddict:`~.MITask`]
 
         :return: consolidated model.
         :rtype: :typeddict:`~.MICollatedModelFundPerformance`
@@ -337,7 +430,7 @@ class MI:
         To delete a task.
 
         :param task: task to delete.
-        :type task: MITask
+        :type task: :typeddict:`~.MITask`
 
         :return: JSON response.
         :rtype: str
