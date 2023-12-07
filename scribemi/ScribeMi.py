@@ -45,34 +45,34 @@ class Value(TypedDict):
     bbox: Optional[str]
 
 
-class ItemSchema(TypedDict):
+class Item(TypedDict):
     tag: str
     term: str
     ogterm: str
     values: list[Value]
 
 
-class Tables(TypedDict):
+class Table(TypedDict):
     title: str
     columnsOrder: list[str]
-    items: list[ItemSchema]
+    items: list[Item]
 
 
 class MICollatedModelFundPerformance(TypedDict):
     date: Optional[str]
-    tables: list[Tables]
+    tables: list[Table]
 
 
-class MIModelFundPerformanceSchema(TypedDict):
+class MIModelFundPerformance(TypedDict):
     date: str
-    tables: list[Tables]
+    tables: list[Table]
 
 
-class MIModelFinancialsSchema(TypedDict):
+class MIModelFinancials(TypedDict):
     company: str
     dateReporting: str
     covering: str
-    items: list[ItemSchema]
+    items: list[Item]
 
 
 class UnauthenticatedException(Exception):
@@ -264,7 +264,7 @@ class MI:
         :type task: MITask
 
         :return: model.
-        :rtype: Union[:typeddict:`~.MIModelFundPerformanceSchema`, :typeddict:`~.MIModelFinancialsSchema`]
+        :rtype: Union[:typeddict:`~.MIModelFundPerformance`, :typeddict:`~.MIModelFinancials`]
         """
         modelUrl = task.get("modelUrl")
         if modelUrl == None:
@@ -290,7 +290,7 @@ class MI:
         To consolidate tasks.
 
         :param tasks: list of tasks to consolidate.
-        :type tasks: list[MITask]
+        :type tasks: list[:typeddict:`~.MITask`]
 
         :return: consolidated model.
         :rtype: :typeddict:`~.MICollatedModelFundPerformance`

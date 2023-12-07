@@ -7,6 +7,6 @@ Methods Reference
 
 .. autotypeddict:: scribemi.Env
 .. autotypeddict:: scribemi.MITask
-.. autotypeddict:: scribemi.MIModelFundPerformanceSchema
-.. autotypeddict:: scribemi.MIModelFinancialsSchema
+.. autotypeddict:: scribemi.MIModelFundPerformance
+.. autotypeddict:: scribemi.MIModelFinancials
 .. autotypeddict:: scribemi.MICollatedModelFundPerformance

@@ -2,7 +2,7 @@ from .ScribeMi import (
     MI,
     Env,
     MITask,
-    MIModelFundPerformanceSchema,
-    MIModelFinancialsSchema,
+    MIModelFundPerformance,
+    MIModelFinancials,
     MICollatedModelFundPerformance,
 )
