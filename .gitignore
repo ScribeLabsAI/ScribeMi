@@ -8,3 +8,4 @@ env/
 tests/.env
 .vscode
 venv
+docs
