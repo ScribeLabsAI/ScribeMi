@@ -10,3 +10,6 @@ Methods Reference
 .. autotypeddict:: scribemi.MIModelFundPerformance
 .. autotypeddict:: scribemi.MIModelFinancials
 .. autotypeddict:: scribemi.MICollatedModelFundPerformance
+.. autotypeddict:: scribemi.Table
+.. autotypeddict:: scribemi.Item
+.. autotypeddict:: scribemi.Value

@@ -95,21 +95,66 @@ class SubmitTaskParams(SubmitTaskParamsBase, total=False):
 
 
 class Value(TypedDict):
+    """
+    Represents a value with optional bounding box information.
+    """
+
     value: str | int | float
+    """
+    The actual value, which can be a string, integer, or float.
+    """
     bbox: Optional[str]
+    """
+    The bounding box information for the value, if available.
+    """
 
 
 class Item(TypedDict):
+    """
+    Represents an item with its attributes.
+
+    :param values: The list of values associated with the item.
+    :type values: List[:typeddict:`~.Value`]
+    """
+
     tag: str
+    """
+    The tag of the item.
+    """
     term: str
+    """
+    The term of the item.
+    """
     ogterm: str
+    """
+    The original term of the item.
+    """
     values: List[Value]
+    """
+    The list of values associated with the item.
+    """
 
 
 class Table(TypedDict):
+    """
+    Represents a table with a title, column order, and items.
+
+    :param items: The list of items in the table.
+    :type items: List[:typeddict:`~.Item`]
+    """
+
     title: str
+    """
+    The title of the table.
+    """
     columnsOrder: List[str]
+    """
+    The order of the columns in the table.
+    """
     items: List[Item]
+    """
+    The list of items in the table.
+    """
 
 
 class MICollatedModelFundPerformance(TypedDict):
@@ -145,6 +190,9 @@ class MIModelFundPerformance(TypedDict):
 class MIModelFinancials(TypedDict):
     """
     Represents the MI model for financials.
+
+    :param items: The list of financial items.
+    :type items: List[:typeddict:`~.Item`]
     """
 
     company: str

@@ -5,4 +5,7 @@ from .ScribeMi import (
     MIModelFundPerformance,
     MIModelFinancials,
     MICollatedModelFundPerformance,
+    Value,
+    Item,
+    Table,
 )
