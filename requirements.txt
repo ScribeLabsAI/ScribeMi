@@ -5,13 +5,13 @@ autodocsumm==0.2.11
 aws-requests-auth==0.4.3
 Babel==2.14.0
 beautifulsoup4==4.12.2
-boto3==1.34.7
-botocore==1.34.7
+boto3==1.34.11
+botocore==1.34.11
 CacheControl==0.13.1
 certifi==2023.11.17
 charset-normalizer==3.3.2
 colorama==0.4.6
-coverage==7.3.4
+coverage==7.4.0
 cssutils==2.9.0
 dict2css==0.3.0.post1
 docutils>=0.18.1
@@ -38,7 +38,7 @@ pkginfo==1.9.6
 platformdirs==4.1.0
 pluggy==1.3.0
 Pygments==2.17.2
-pytest==7.4.3
+pytest==7.4.4
 pytest-cov==4.1.0
 python-dateutil==2.8.2
 python-dotenv==1.0.0
