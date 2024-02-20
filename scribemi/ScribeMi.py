@@ -418,10 +418,7 @@ class MI:
             )
         res = requests.get(modelUrl)
         if res.status_code == 200:
-            md5checksum_expected = res.headers["ETag"].replace('"', "")
-            md5checksum = md5(res.text.encode(), usedforsecurity=False).hexdigest()
-            if md5checksum != md5checksum_expected:
-                raise Exception("Integrity Error: invalid checksum. Please retry.")
+            verify_etag_checksum(res)
 
             return json.loads(res.text)
         elif res.status_code == 401 or res.status_code == 403:
@@ -503,3 +500,10 @@ def upload_file(file, md5checksum, url):
     res = requests.put(url, data=file, headers={"Content-MD5": md5checksum})
     if res.status_code != 200:
         raise Exception("Error uploading file: {}".format(res.status_code))
+
+
+def verify_etag_checksum(res: requests.Response):
+    md5checksum_expected = res.headers["ETag"].replace('"', "")
+    md5checksum = md5(res.text.encode(), usedforsecurity=False).hexdigest()
+    if md5checksum != md5checksum_expected:
+        raise Exception("Integrity Error: invalid checksum. Please retry.")
