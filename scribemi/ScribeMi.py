@@ -420,7 +420,6 @@ class MI:
         if res.status_code == 200:
             md5checksum_expected = res.headers['ETag'].replace('"', '')
             md5checksum = md5(res.text.encode()).hexdigest()
-            print(md5checksum, md5checksum_expected)
             if md5checksum != md5checksum_expected:
                 raise Exception("Integrity Error: invalid checksum. Please retry.")
 
