@@ -6,6 +6,8 @@ from scribeauth import ScribeAuth
 from aws_requests_auth.aws_auth import AWSRequestsAuth
 from datetime import datetime
 from typing_extensions import TypedDict, Optional, List
+from hashlib import md5
+from base64 import b64encode
 
 
 class Env(TypedDict):
@@ -416,6 +418,12 @@ class MI:
             )
         res = requests.get(modelUrl)
         if res.status_code == 200:
+            md5checksum_expected = res.headers['ETag'].replace('"', '')
+            md5checksum = md5(res.text.encode()).hexdigest()
+            print(md5checksum, md5checksum_expected)
+            if md5checksum != md5checksum_expected:
+                raise Exception("Integrity Error: invalid checksum. Please retry.")
+
             return json.loads(res.text)
         elif res.status_code == 401 or res.status_code == 403:
             raise UnauthenticatedException(
@@ -462,14 +470,20 @@ class MI:
         if isinstance(file_or_filename, str) and params.get("filename") == None:
             params["filename"] = file_or_filename
 
+        file = open(file_or_filename, "rb") if isinstance(file_or_filename, str) else file_or_filename
+        file_content = file.read()
+
+        hash = md5(file_content, usedforsecurity=False)
+        md5checksum = b64encode(hash.digest()).decode()
+        params['md5checksum'] = md5checksum
+
         post_res = self.call_endpoint("POST", "/tasks", params)
         put_url = post_res["url"]
 
+        upload_file(file_content, md5checksum, put_url)
+
         if isinstance(file_or_filename, str):
-            with open(file_or_filename, "rb") as file:
-                upload_file(file, put_url)
-        else:
-            return upload_file(file_or_filename, put_url)
+            file.close()
 
         return post_res["jobid"]
 
@@ -486,7 +500,7 @@ class MI:
         return self.call_endpoint("DELETE", "/tasks/{}".format(task["jobid"]))
 
 
-def upload_file(file, url):
-    res = requests.put(url, data=file)
+def upload_file(file, md5checksum, url):
+    res = requests.put(url, data=file, headers={ 'Content-MD5': md5checksum })
     if res.status_code != 200:
         raise Exception("Error uploading file: {}".format(res.status_code))
