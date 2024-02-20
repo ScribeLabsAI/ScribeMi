@@ -469,8 +469,11 @@ class MI:
         if isinstance(file_or_filename, str) and params.get("filename") == None:
             params["filename"] = file_or_filename
 
-        file = open(file_or_filename, "rb") if isinstance(file_or_filename, str) else file_or_filename
-        file_content = file.read()
+        if isinstance(file_or_filename, str):
+            with open(file_or_filename, 'rb') as file:
+                file_content = file.read()
+        else:
+            file_content = file_or_filename.read()
 
         hash = md5(file_content, usedforsecurity=False)
         md5checksum = b64encode(hash.digest()).decode()
@@ -480,9 +483,6 @@ class MI:
         put_url = post_res["url"]
 
         upload_file(file_content, md5checksum, put_url)
-
-        if isinstance(file_or_filename, str):
-            file.close()
 
         return post_res["jobid"]
 
