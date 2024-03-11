@@ -33,7 +33,7 @@ more-itertools==10.2.0
 msgpack==1.0.8
 natsort==8.4.0
 nh3==0.2.15
-packaging==23.2
+packaging==24.0
 pkginfo==1.10.0
 platformdirs==4.2.0
 pluggy==1.4.0
