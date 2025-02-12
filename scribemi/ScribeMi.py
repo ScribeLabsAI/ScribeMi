@@ -3,7 +3,6 @@ import json
 from io import BytesIO
 from typing import BinaryIO, Union
 from scribeauth import ScribeAuth
-from aws_requests_auth.aws_auth import AWSRequestsAuth
 from datetime import datetime
 from typing_extensions import TypedDict, Optional, List
 from hashlib import md5
@@ -18,10 +17,6 @@ class Env(TypedDict):
     API_URL: str
     """
     The URL of the API.
-    """
-    IDENTITY_POOL_ID: str
-    """
-    The ID of the identity pool.
     """
     USER_POOL_ID: str
     """
@@ -248,6 +243,14 @@ class InvalidFiletypeException(Exception):
     pass
 
 
+class MissingFilenameException(Exception):
+    """
+    Exception raised when trying to upload a file without specifying a filename
+    """
+
+    pass
+
+
 class MI:
     def __init__(self, env):
         """
@@ -261,12 +264,9 @@ class MI:
             {
                 "client_id": env["CLIENT_ID"],
                 "user_pool_id": env["USER_POOL_ID"],
-                "identity_pool_id": env["IDENTITY_POOL_ID"],
             }
         )
         self.tokens = None
-        self.user_id = None
-        self.request_auth = None
 
     def authenticate(self, param):
         """
@@ -285,50 +285,23 @@ class MI:
         :type refresh_token: str
         """
         self.tokens = self.auth_client.get_tokens(**param)
-        id_token = self.tokens.get("id_token")
-        if id_token != None:
-            self.user_id = self.auth_client.get_federated_id(id_token)
-            self.credentials = self.auth_client.get_federated_credentials(
-                self.user_id, id_token
-            )
-            host = self.env["API_URL"].split("/")[0]
-            self.request_auth = AWSRequestsAuth(
-                aws_access_key=self.credentials["AccessKeyId"],
-                aws_secret_access_key=self.credentials["SecretKey"],
-                aws_token=self.credentials["SessionToken"],
-                aws_host=host,
-                aws_region=self.env["REGION"],
-                aws_service="execute-api",
-            )
-        else:
+        access_token = self.tokens.get("access_token")
+        if access_token == None:
             raise UnauthenticatedException("Authentication failed")
 
     def reauthenticate(self):
         """
         To reauthenticate a user without sending parameters. Must be called after authenticate.
         """
-        if self.tokens == None or self.user_id == None:
+        if self.tokens == None:
             raise UnauthenticatedException("Must authenticate before reauthenticating")
         refresh_token = self.tokens.get("refresh_token")
-        if refresh_token != None:
-            self.tokens = self.auth_client.get_tokens(refresh_token=refresh_token)
-            id_token = self.tokens.get("id_token")
-            if id_token != None:
-                self.credentials = self.auth_client.get_federated_credentials(
-                    self.user_id, id_token
-                )
-                host = self.env["API_URL"].split("/")[0]
-                self.request_auth = AWSRequestsAuth(
-                    aws_access_key=self.credentials["AccessKeyId"],
-                    aws_secret_access_key=self.credentials["SecretKey"],
-                    aws_token=self.credentials["SessionToken"],
-                    aws_host=host,
-                    aws_region=self.env["REGION"],
-                    aws_service="execute-api",
-                )
-            else:
-                raise UnauthenticatedException("Authentication failed")
-        else:
+        if refresh_token == None:
+            raise UnauthenticatedException("Reuthentication failed (no refresh token)")
+
+        self.tokens = self.auth_client.get_tokens(refresh_token=refresh_token)
+        access_token = self.tokens.get("access_token")
+        if access_token == None:
             raise UnauthenticatedException("Authentication failed")
 
     def call_endpoint(self, method, path, data=None, params=None):
@@ -348,18 +321,14 @@ class MI:
         :return: JSON response.
         :rtype: str
         """
-        if self.request_auth == None:
+        if self.tokens == None:
             raise UnauthenticatedException("Not authenticated")
-        if self.credentials["Expiration"] < datetime.now(
-            self.credentials["Expiration"].tzinfo
-        ):
-            self.reauthenticate()
         res = requests.request(
             method=method,
             url="https://{host}{path}".format(host=self.env["API_URL"], path=path),
             params=params,
             json=data,
-            auth=self.request_auth,
+            headers={"Authorization": self.tokens["access_token"]},
         )
         if res.status_code == 200:
             return json.loads(res.text)
@@ -452,7 +421,7 @@ class MI:
         To submit a task.
 
         :param file_or_filename: file to upload -- Union[str, BytesIO, BinaryIO]
-        :param params: SubmitTaskParams -- Dictionary {filetype: “str”, filename: “Optional[str]”, companyname: “Optional[str]”}
+        :param params: SubmitTaskParams -- Dictionary {filetype: “str”, md5checksum: “str”, filename: “Optional[str]”, companyname: “Optional[str]”}
 
         :return: jobid of the task.
         :rtype: str
@@ -465,6 +434,9 @@ class MI:
 
         if isinstance(file_or_filename, str) and params.get("filename") == None:
             params["filename"] = file_or_filename
+
+        if params["filename"] == None:
+            raise MissingFilenameException()
 
         if isinstance(file_or_filename, str):
             with open(file_or_filename, "rb") as file:

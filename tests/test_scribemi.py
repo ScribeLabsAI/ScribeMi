@@ -13,7 +13,6 @@ URL, API_KEY, CLIENT_ID, USER, PASSWORD, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KE
 
 env = {
     "API_URL": os.environ["API_URL"],
-    "IDENTITY_POOL_ID": os.environ["IDENTITY_POOL_ID"],
     "USER_POOL_ID": os.environ["USER_POOL_ID"],
     "CLIENT_ID": os.environ["CLIENT_ID"],
     "REGION": os.environ["REGION"],
