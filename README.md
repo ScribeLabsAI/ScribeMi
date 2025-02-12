@@ -19,14 +19,13 @@ The constructor expects an environment object:
 ```
 env = {
   API_URL: 'API_URL',
-  IDENTITY_POOL_ID: 'IDENTITY_POOL_ID',
   USER_POOL_ID: 'USER_POOL_ID',
   CLIENT_ID: 'CLIENT_ID',
   REGION: 'REGION',
 };
 ```
 
-The `API_URL` is `"mi.scribelabs.ai/v1"`.
+The `API_URL` is `"mi.scribelabs.ai/v2"`.
 
 The `REGION` is `"eu-west-2"`.
 
@@ -36,9 +35,8 @@ Contact Scribe to obtain other details required for authentication.
 from ScribeMi import MI
 
 client = MI({
-    'API_URL': 'mi.scribelabs.ai/v1',
+    'API_URL': 'mi.scribelabs.ai/v2',
     'REGION': 'eu-west-2',
-    'IDENTITY_POOL_ID': 'Contact Scribe for authentication details',
     'USER_POOL_ID': 'Contact Scribe for authentication details',
     'CLIENT_ID': 'Contact Scribe for authentication details',
 })
